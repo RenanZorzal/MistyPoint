@@ -22,6 +22,10 @@ public class FuncionarioDAO {
 		stmt.setString(3,funcionario.getCargo());
 		stmt.setString(4,funcionario.getTelefone());
 		stmt.setString(5,funcionario.getEmail());
+		stmt.setString(6,funcionario.getSenha());
+		
+		stmt.executeUpdate();
+		stmt.close();
 	
 		
 	}
