@@ -1,0 +1,21 @@
+# Compiled class file
+*.class
+bin/
+
+# Eclipse
+.project
+.classpath
+.settings/
+.launches/
+*.launch
+
+# Mac
+.DS_Store
+
+# Misc
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
