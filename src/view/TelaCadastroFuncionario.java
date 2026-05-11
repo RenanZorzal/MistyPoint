@@ -2,6 +2,7 @@ package view;
 
 import java.sql.SQLException;
 
+import controller.FuncionarioController;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -154,6 +155,8 @@ public class TelaCadastroFuncionario {
             String senhaTxt = pfSenha.getText().trim();
             
             Funcionario funcionario = new Funcionario (nomeTxt,cpfTxt,cargoTxt,telefoneTxt,emailTxt,senhaTxt);
+            FuncionarioController funcionarioCtrl = new FuncionarioController(funcionario);
+            funcionarioCtrl.salvarFuncionario();
         } else {
             lblMensagem.setTextFill(Color.RED);
             lblMensagem.setText("Preencha todos os campos!");
