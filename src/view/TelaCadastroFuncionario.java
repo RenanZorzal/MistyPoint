@@ -1,5 +1,7 @@
 package view;
 
+import java.sql.SQLException;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -12,6 +14,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import model.Funcionario;
 
 public class TelaCadastroFuncionario {
 
@@ -99,7 +102,14 @@ public class TelaCadastroFuncionario {
         btnCadastrar.setPrefWidth(150);
         btnCadastrar.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         btnCadastrar.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;");
-        btnCadastrar.setOnAction(e -> handleCadastro());
+        btnCadastrar.setOnAction(e -> {
+			try {
+				handleCadastro();
+			} catch (SQLException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		});
 
         lblMensagem = new Label();
         lblMensagem.setTextFill(Color.RED);
@@ -129,12 +139,21 @@ public class TelaCadastroFuncionario {
                !pfSenha.getText().trim().isEmpty();
     }
 
-    private void handleCadastro() {
+    private void handleCadastro() throws SQLException{
         lblMensagem.setText("");
 
         if (validarCampos()) {
             lblMensagem.setTextFill(Color.GREEN);
             lblMensagem.setText("Funcionário cadastrado com sucesso!");
+            
+            String nomeTxt = tfNome.getText().trim();
+            String cpfTxt = tfCpf.getText().trim();
+            String cargoTxt = tfCargo.getText().trim();
+            String telefoneTxt = tfTelefone.getText().trim();
+            String emailTxt = tfEmail.getText().trim();
+            String senhaTxt = pfSenha.getText().trim();
+            
+            Funcionario funcionario = new Funcionario (nomeTxt,cpfTxt,cargoTxt,telefoneTxt,emailTxt,senhaTxt);
         } else {
             lblMensagem.setTextFill(Color.RED);
             lblMensagem.setText("Preencha todos os campos!");
