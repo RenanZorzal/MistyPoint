@@ -16,7 +16,7 @@ public class Principal extends Application{
         // Configura o Stage (janela)
         stage.setTitle("Sistema de Pontos");
         stage.setScene(scene);
-        stage.setResizable(false); // impede redimensionamento
+        stage.setResizable(false);
         stage.show();
     }
 

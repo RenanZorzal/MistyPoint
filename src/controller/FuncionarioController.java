@@ -1,10 +1,6 @@
 package controller;
 
-
-
 import dao.FuncionarioDAO;
-import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
 import model.Conexao;
 import model.Funcionario;
 
@@ -16,23 +12,29 @@ public class FuncionarioController {
 		super();
 		this.funcionario = funcionario;
 	}
-	
-	@FXML
-	public void salvarFuncionario() {
-		try {
+
+	/**
+	 * Salva o funcionário no banco após verificar duplicatas de CPF e e-mail.
+	 * 
+	 * @throws IllegalArgumentException se CPF ou e-mail já estiverem cadastrados
+	 * @throws Exception se ocorrer erro de banco de dados
+	 */
+	public void salvarFuncionario() throws Exception {
 		Conexao.conectar();
-		dao = new FuncionarioDAO(Conexao.conexao);
-		
+		try {
+			dao = new FuncionarioDAO(Conexao.conexao);
+
+			if (dao.existeCpf(funcionario.getCpf())) {
+				throw new IllegalArgumentException("CPF já cadastrado no sistema!");
+			}
+			if (dao.existeEmail(funcionario.getEmail())) {
+				throw new IllegalArgumentException("E-mail já cadastrado no sistema!");
+			}
+
 			dao.inserir(funcionario);
-	
-		Alert alert = new Alert(Alert.AlertType.INFORMATION);
-		alert.setContentText("Funcionario salvo com sucesso!");
-		alert.show();
-		} catch (Exception e) {
-			e.printStackTrace();
 		} finally {
 			Conexao.desconectar();
 		}
-	} 
-	
+	}
 }
+

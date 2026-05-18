@@ -4,9 +4,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-import javax.swing.JOptionPane;
-
-
 
 
 
@@ -17,24 +14,19 @@ public class Conexao {
 	
 	public static Connection conexao;
 	
-	public static void conectar() { // Efetua a conexão
-		try {
-			// Conexão com o banco
-			conexao = DriverManager.getConnection(server+banco+usuario);
-			JOptionPane.showMessageDialog(null, "Conexão realizada com sucesso!");
-			System.out.println("Conexão realizada com sucesso!");
-		} catch (SQLException ex) {
-			System.out.println("Erro!");
-			JOptionPane.showMessageDialog(null, "Erro de conexão!\nERRO: "+ ex.getMessage());
-		}
+	public static void conectar() throws SQLException { // Efetua a conexão
+		conexao = DriverManager.getConnection(server + banco + usuario);
+		System.out.println("Conexão realizada com sucesso!");
 	}
 	
 	public static void desconectar() { // Fecha a conexão
 		try {
-		conexao.close(); // Fechar conexão
-		JOptionPane.showMessageDialog(null, "Conexão fechada com sucesso!");
+			if (conexao != null && !conexao.isClosed()) {
+				conexao.close();
+				System.out.println("Conexão fechada com sucesso!");
+			}
 		} catch (SQLException ex) {
-			JOptionPane.showMessageDialog(null, "Erro ao fechar a conexão!\nERRO: " + ex.getMessage());
+			System.out.println("Erro ao fechar a conexão: " + ex.getMessage());
 		}
 	}
 	

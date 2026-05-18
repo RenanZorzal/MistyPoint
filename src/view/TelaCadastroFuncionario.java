@@ -1,6 +1,5 @@
 package view;
 
-import java.sql.SQLException;
 
 import controller.FuncionarioController;
 import javafx.geometry.Insets;
@@ -103,14 +102,7 @@ public class TelaCadastroFuncionario {
         btnCadastrar.setPrefWidth(150);
         btnCadastrar.setFont(Font.font("Arial", FontWeight.BOLD, 14));
         btnCadastrar.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-background-radius: 5; -fx-padding: 10 20;");
-        btnCadastrar.setOnAction(e -> {
-			try {
-				handleCadastro();
-			} catch (SQLException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-		});
+        btnCadastrar.setOnAction(e -> handleCadastro());
 
         lblMensagem = new Label();
         lblMensagem.setTextFill(Color.RED);
@@ -132,34 +124,108 @@ public class TelaCadastroFuncionario {
     }
 
     private boolean validarCampos() {
-        return !tfNome.getText().trim().isEmpty() &&
-               !tfCpf.getText().trim().isEmpty() &&
-               !tfCargo.getText().trim().isEmpty() &&
-               !tfTelefone.getText().trim().isEmpty() &&
-               !tfEmail.getText().trim().isEmpty() &&
-               !pfSenha.getText().trim().isEmpty();
+        String nome     = tfNome.getText().trim();
+        String cpf      = tfCpf.getText().trim();
+        String cargo    = tfCargo.getText().trim();
+        String telefone = tfTelefone.getText().trim();
+        String email    = tfEmail.getText().trim();
+        String senha    = pfSenha.getText().trim();
+
+        if (nome.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe o nome do funcionário!");
+            return false;
+        }
+        if (nome.length() < 3) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Nome muito curto!");
+            return false;
+        }
+        
+        if (cpf.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe o CPF!");
+            return false;
+        }
+        if (cpf.length() != 11) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("CPF deve ter 11 dígitos!");
+            return false;
+        }
+
+        if (cargo.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe o cargo!");
+            return false;
+        }
+
+        if (telefone.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe o telefone!");
+            return false;
+        }
+        if (telefone.length() < 10) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Telefone deve ter pelo menos 10 dígitos!");
+            return false;
+        }
+
+        if (email.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe o email!");
+            return false;
+        }
+        if (!email.contains("@") || !email.contains(".")) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Email inválido!");
+            return false;
+        }
+
+        if (senha.isEmpty()) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Informe a senha!");
+            return false;
+        }
+        if (senha.length() < 6) {
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Senha deve ter pelo menos 6 caracteres!");
+            return false;
+        }
+
+        return true;
     }
 
-    private void handleCadastro() throws SQLException{
+    private void handleCadastro() {
         lblMensagem.setText("");
 
-        if (validarCampos()) {
+        if (!validarCampos()) {
+            return;
+        }
+
+        String nomeTxt     = tfNome.getText().trim();
+        String cpfTxt      = tfCpf.getText().trim();
+        String cargoTxt    = tfCargo.getText().trim();
+        String telefoneTxt = tfTelefone.getText().trim();
+        String emailTxt    = tfEmail.getText().trim();
+        String senhaTxt    = pfSenha.getText().trim();
+
+        Funcionario funcionario = new Funcionario(nomeTxt, cpfTxt, cargoTxt, telefoneTxt, emailTxt, senhaTxt);
+        FuncionarioController funcionarioCtrl = new FuncionarioController(funcionario);
+
+        try {
+            funcionarioCtrl.salvarFuncionario();
+            // Só exibe sucesso se o banco aceitou sem erros
             lblMensagem.setTextFill(Color.GREEN);
             lblMensagem.setText("Funcionário cadastrado com sucesso!");
-            
-            String nomeTxt = tfNome.getText().trim();
-            String cpfTxt = tfCpf.getText().trim();
-            String cargoTxt = tfCargo.getText().trim();
-            String telefoneTxt = tfTelefone.getText().trim();
-            String emailTxt = tfEmail.getText().trim();
-            String senhaTxt = pfSenha.getText().trim();
-            
-            Funcionario funcionario = new Funcionario (nomeTxt,cpfTxt,cargoTxt,telefoneTxt,emailTxt,senhaTxt);
-            FuncionarioController funcionarioCtrl = new FuncionarioController(funcionario);
-            funcionarioCtrl.salvarFuncionario();
-        } else {
+        } catch (IllegalArgumentException ex) {
+            // CPF ou e-mail duplicado
             lblMensagem.setTextFill(Color.RED);
-            lblMensagem.setText("Preencha todos os campos!");
+            lblMensagem.setText(ex.getMessage());
+        } catch (Exception ex) {
+            // Qualquer outro erro de banco
+            lblMensagem.setTextFill(Color.RED);
+            lblMensagem.setText("Erro ao cadastrar: " + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 }
