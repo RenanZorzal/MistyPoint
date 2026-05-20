@@ -10,7 +10,7 @@ public class Principal extends Application{
     @Override
     public void start(Stage stage) {
         // Cria a tela de login
-        TelaCadastroFuncionario telaLogin = new TelaCadastroFuncionario();
+        TelaLoginEmpresa telaLogin = new TelaLoginEmpresa();
         Scene scene = telaLogin.getScene();
 
         // Configura o Stage (janela)

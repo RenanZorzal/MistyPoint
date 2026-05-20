@@ -56,5 +56,17 @@ public class FuncionarioDAO {
 		stmt.close();
 	}
 
-	
+	/** Retorna true se o e-mail e senha batem com um registro existente */
+	public boolean autenticar(String email, String senha) throws SQLException {
+		String sql = "SELECT COUNT(*) FROM funcionario WHERE emailfuncionario = ? AND senhafuncionario = ?";
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		stmt.setString(1, email);
+		stmt.setString(2, senha);
+		ResultSet rs = stmt.executeQuery();
+		rs.next();
+		int count = rs.getInt(1);
+		rs.close();
+		stmt.close();
+		return count > 0;
+	}
 }

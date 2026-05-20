@@ -1,6 +1,6 @@
 package view;
 
-import controller.FuncionarioController;
+import controller.EmpresaController;
 import dao.EnderecoDAO;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
@@ -36,33 +36,38 @@ import javafx.util.Duration;
 import model.Bairro;
 import model.Cidade;
 import model.Conexao;
+import model.Empresa;
 import model.Estado;
-import model.Funcionario;
 import model.Logradouro;
 
-public class TelaCadastroFuncionario {
+public class TelaCadastroEmpresa {
 
     // ── Paleta ───────────────────────────────────────────
-    private static final String PINK    = "#FF6B8A";
-    private static final String ORANGE  = "#FF8E53";
-    private static final String PURPLE  = "#9B59B6";
-    private static final String DARK    = "#09080F";
-    private static final String CARD_BG = "#0F081E";
+    private static final String PINK     = "#FF6B8A";
+    private static final String ORANGE   = "#FF8E53";
+    private static final String PURPLE   = "#9B59B6";
+    private static final String DARK     = "#09080F";
+    private static final String CARD_BG  = "#0F081E";
     private static final String TEXT_SEC = "#9B8EC4";
 
-    private TextField              tfNome;
-    private TextField              tfCpf;
-    private TextField              tfCargo;
-    private TextField              tfTelefone;
-    private TextField              tfEmail;
-    private PasswordField          pfSenha;
-    private ComboBox<Estado>       cbEstado;
-    private ComboBox<Cidade>       cbCidade;
-    private ComboBox<Bairro>       cbBairro;
-    private ComboBox<Logradouro>   cbLogradouro;
-    private TextField              tfComplemento;
-    private TextField              tfNumero;
-    private Label                  lblMensagem;
+    // ── Dados da empresa ─────────────────────────────────
+    private TextField   tfNomeEmpresa;
+    private TextField   tfCnpj;
+    private TextField   tfRazaoSocial;
+    private TextField   tfNomeFantasia;
+    private TextField   tfInscricaoEstadual;
+    private TextField   tfEmail;
+    private PasswordField pfSenha;
+
+    // ── Endereço ─────────────────────────────────────────
+    private ComboBox<Estado>     cbEstado;
+    private ComboBox<Cidade>     cbCidade;
+    private ComboBox<Bairro>     cbBairro;
+    private ComboBox<Logradouro> cbLogradouro;
+    private TextField            tfNumero;
+    private TextField            tfComplemento;
+
+    private Label lblMensagem;
 
     public Scene getScene() {
 
@@ -80,7 +85,6 @@ public class TelaCadastroFuncionario {
         Circle orb4 = criarOrb(250, PINK,   0.10, 110, 1150,  -80);
         bgLayer.getChildren().addAll(orb1, orb2, orb3, orb4);
 
-        // Vincular bgLayer ao tamanho do root (responsivo)
         bgLayer.prefWidthProperty().bind(root.widthProperty());
         bgLayer.prefHeightProperty().bind(root.heightProperty());
 
@@ -118,7 +122,7 @@ public class TelaCadastroFuncionario {
         );
         VBox.setMargin(accentLine, new Insets(0, 0, 10, 0));
 
-        Label lblTitulo = new Label("NOVO FUNCIONÁRIO");
+        Label lblTitulo = new Label("NOVA EMPRESA");
         lblTitulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 26));
         lblTitulo.setTextFill(Color.WHITE);
 
@@ -133,26 +137,27 @@ public class TelaCadastroFuncionario {
         titlePulse.setCycleCount(Timeline.INDEFINITE);
         titlePulse.play();
 
-        Label lblSub = new Label("Preencha os dados para cadastrar");
+        Label lblSub = new Label("Preencha os dados para cadastrar a empresa");
         lblSub.setFont(Font.font("Helvetica Neue", 13));
         lblSub.setTextFill(Color.web(TEXT_SEC));
         VBox.setMargin(lblSub, new Insets(4, 0, 14, 0));
 
-        // ── CAMPOS ────────────────────────────────────────────────────
-        tfNome      = criarCampo("Nome completo", false);
-        tfCpf       = criarCampo("CPF (apenas números)", false);
-        tfCargo     = criarCampo("Cargo", false);
-        tfTelefone  = criarCampo("Telefone", false);
-        tfEmail     = criarCampo("E-mail", false);
-        pfSenha     = (PasswordField) criarCampo("Senha (mín. 6 caracteres)", true);
+        // ── CAMPOS DA EMPRESA ─────────────────────────────────────────
+        tfNomeEmpresa       = criarCampo("Nome da Empresa", false);
+        tfCnpj              = criarCampo("CNPJ (ex: 00.000.000/0001-00)", false);
+        tfRazaoSocial       = criarCampo("Razão Social", false);
+        tfNomeFantasia      = criarCampo("Nome Fantasia", false);
+        tfInscricaoEstadual = criarCampo("Inscrição Estadual", false);
+        tfEmail             = criarCampo("E-mail da Empresa", false);
+        pfSenha             = (PasswordField) criarCampo("Senha (mín. 6 caracteres)", true);
 
         // ── CAMPOS DE ENDEREÇO ────────────────────────────────────────
         cbEstado     = criarComboBox("Selecione o Estado");
         cbCidade     = criarComboBox("Selecione a Cidade");
         cbBairro     = criarComboBox("Selecione o Bairro");
         cbLogradouro = criarComboBox("Selecione o Logradouro");
-        tfComplemento= criarCampo("Complemento (Ex: Apto 101)", false);
-        tfNumero     = criarCampo("Número", false);
+        tfNumero      = criarCampo("Número", false);
+        tfComplemento = criarCampo("Complemento (Ex: Sala 10)", false);
 
         cbCidade.setDisable(true);
         cbBairro.setDisable(true);
@@ -199,19 +204,25 @@ public class TelaCadastroFuncionario {
             }
         });
 
+        // ── LINHAS DO FORMULÁRIO ──────────────────────────────────────
+        // Dados da empresa: 3 linhas — última com 3 colunas (Inscrição + E-mail + Senha)
+        HBox linhaDados1 = new HBox(15, grupo("Nome da Empresa", tfNomeEmpresa), grupo("CNPJ", tfCnpj));
+        linhaDados1.setAlignment(Pos.CENTER_LEFT);
+        HBox linhaDados2 = new HBox(15, grupo("Razão Social", tfRazaoSocial), grupo("Nome Fantasia", tfNomeFantasia));
+        linhaDados2.setAlignment(Pos.CENTER_LEFT);
+        HBox linhaDados3 = new HBox(15,
+            grupo("Inscrição Estadual", tfInscricaoEstadual),
+            grupo("E-mail", tfEmail),
+            grupo("Senha", pfSenha));
+        linhaDados3.setAlignment(Pos.CENTER_LEFT);
+
+        // Endereço: 3 linhas
         HBox linhaEnd1 = new HBox(15, grupo("Estado", cbEstado), grupo("Cidade", cbCidade));
         linhaEnd1.setAlignment(Pos.CENTER_LEFT);
         HBox linhaEnd2 = new HBox(15, grupo("Bairro", cbBairro), grupo("Logradouro", cbLogradouro));
         linhaEnd2.setAlignment(Pos.CENTER_LEFT);
         HBox linhaEnd3 = new HBox(15, grupo("Número", tfNumero), grupo("Complemento", tfComplemento));
         linhaEnd3.setAlignment(Pos.CENTER_LEFT);
-
-        HBox linhaDados1 = new HBox(15, grupo("Nome", tfNome), grupo("CPF", tfCpf));
-        linhaDados1.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaDados2 = new HBox(15, grupo("Cargo", tfCargo), grupo("Telefone", tfTelefone));
-        linhaDados2.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaDados3 = new HBox(15, grupo("E-mail", tfEmail), grupo("Senha", pfSenha));
-        linhaDados3.setAlignment(Pos.CENTER_LEFT);
 
         HBox[] linhasForm = {
             linhaDados1, linhaDados2, linhaDados3,
@@ -225,10 +236,10 @@ public class TelaCadastroFuncionario {
         lblMensagem = new Label();
         lblMensagem.setFont(Font.font("Helvetica Neue", 13));
         lblMensagem.setWrapText(true);
-        VBox.setMargin(lblMensagem, new Insets(12, 0, 0, 0));
+        VBox.setMargin(lblMensagem, new Insets(10, 0, 0, 0));
 
         // ── BOTÃO ─────────────────────────────────────────────────────
-        Button btnCadastrar = new Button("Cadastrar");
+        Button btnCadastrar = new Button("Cadastrar Empresa");
         btnCadastrar.setMaxWidth(Double.MAX_VALUE);
         btnCadastrar.setPrefHeight(44);
         btnCadastrar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 16));
@@ -338,38 +349,42 @@ public class TelaCadastroFuncionario {
             cb.setStyle(estiloField(focused));
         });
 
-        // CellFactory para deixar a fonte clara nos itens e na opção selecionada
-        javafx.util.Callback<javafx.scene.control.ListView<T>, javafx.scene.control.ListCell<T>> cellFactory = lv -> new javafx.scene.control.ListCell<T>() {
-            @Override
-            protected void updateItem(T item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle("-fx-background-color: #130A24;");
-                } else {
-                    setText(item.toString());
-                    setStyle("-fx-text-fill: white; -fx-background-color: #130A24; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 14px;");
+        // CellFactory — itens da lista
+        javafx.util.Callback<javafx.scene.control.ListView<T>, javafx.scene.control.ListCell<T>> cellFactory =
+            lv -> new javafx.scene.control.ListCell<T>() {
+                @Override
+                protected void updateItem(T item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("-fx-background-color: #130A24;");
+                    } else {
+                        setText(item.toString());
+                        setStyle("-fx-text-fill: white; -fx-background-color: #130A24;" +
+                                 "-fx-font-family: 'Helvetica Neue'; -fx-font-size: 14px;");
+                    }
                 }
-            }
-        };
-        
+            };
+
         cb.setCellFactory(cellFactory);
-        
-        // ButtonCell para o item que fica visível quando o combo está fechado
+
+        // ButtonCell — item visível com o combo fechado
         cb.setButtonCell(new javafx.scene.control.ListCell<T>() {
             @Override
             protected void updateItem(T item, boolean empty) {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(prompt);
-                    setStyle("-fx-text-fill: #5A4A7A; -fx-background-color: transparent; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 15px;");
+                    setStyle("-fx-text-fill: #5A4A7A; -fx-background-color: transparent;" +
+                             "-fx-font-family: 'Helvetica Neue'; -fx-font-size: 15px;");
                 } else {
                     setText(item.toString());
-                    setStyle("-fx-text-fill: white; -fx-background-color: transparent; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 15px;");
+                    setStyle("-fx-text-fill: white; -fx-background-color: transparent;" +
+                             "-fx-font-family: 'Helvetica Neue'; -fx-font-size: 15px;");
                 }
             }
         });
-        
+
         return cb;
     }
 
@@ -377,7 +392,6 @@ public class TelaCadastroFuncionario {
         Label lbl = new Label(labelText.toUpperCase());
         lbl.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 11));
         lbl.setTextFill(Color.web("#7B68A0"));
-        
         VBox v = new VBox(7, lbl, field);
         HBox.setHgrow(v, javafx.scene.layout.Priority.ALWAYS);
         return v;
@@ -456,26 +470,34 @@ public class TelaCadastroFuncionario {
     // ── Validação ─────────────────────────────────────────────────────
 
     private boolean validarCampos() {
-        String nome     = tfNome.getText().trim();
-        String cpf      = tfCpf.getText().trim();
-        String cargo    = tfCargo.getText().trim();
-        String telefone = tfTelefone.getText().trim();
-        String email    = tfEmail.getText().trim();
-        String senha    = pfSenha.getText().trim();
-        String numStr   = tfNumero.getText().trim();
-        String comp     = tfComplemento.getText().trim();
+        String nomeEmpresa  = tfNomeEmpresa.getText().trim();
+        String cnpj         = tfCnpj.getText().trim();
+        String razaoSocial  = tfRazaoSocial.getText().trim();
+        String nomeFantasia = tfNomeFantasia.getText().trim();
+        String inscricao    = tfInscricaoEstadual.getText().trim();
+        String email        = tfEmail.getText().trim();
+        String senha        = pfSenha.getText().trim();
+        String numStr       = tfNumero.getText().trim();
+        String comp         = tfComplemento.getText().trim();
 
-        if (nome.isEmpty() || nome.length() < 3) {
-            mostrarErro(nome.isEmpty() ? "Informe o nome do funcionário." : "Nome deve ter pelo menos 3 caracteres.");
+        if (nomeEmpresa.isEmpty() || nomeEmpresa.length() < 2) {
+            mostrarErro(nomeEmpresa.isEmpty() ? "Informe o nome da empresa." : "Nome deve ter pelo menos 2 caracteres.");
             return false;
         }
-        if (cpf.isEmpty() || cpf.length() != 11 || !cpf.matches("\\d+")) {
-            mostrarErro(cpf.isEmpty() ? "Informe o CPF." : "CPF deve ter exatamente 11 dígitos.");
+        if (cnpj.isEmpty()) {
+            mostrarErro("Informe o CNPJ.");
             return false;
         }
-        if (cargo.isEmpty()) { mostrarErro("Informe o cargo."); return false; }
-        if (telefone.isEmpty() || telefone.length() < 10) {
-            mostrarErro(telefone.isEmpty() ? "Informe o telefone." : "Telefone deve ter pelo menos 10 dígitos.");
+        if (razaoSocial.isEmpty()) {
+            mostrarErro("Informe a Razão Social.");
+            return false;
+        }
+        if (nomeFantasia.isEmpty()) {
+            mostrarErro("Informe o Nome Fantasia.");
+            return false;
+        }
+        if (inscricao.isEmpty()) {
+            mostrarErro("Informe a Inscrição Estadual.");
             return false;
         }
         if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
@@ -486,21 +508,18 @@ public class TelaCadastroFuncionario {
             mostrarErro(senha.isEmpty() ? "Informe a senha." : "Senha deve ter pelo menos 6 caracteres.");
             return false;
         }
-        
-        if (cbEstado.getValue() == null) { mostrarErro("Selecione um estado."); return false; }
-        if (cbCidade.getValue() == null) { mostrarErro("Selecione uma cidade."); return false; }
-        if (cbBairro.getValue() == null) { mostrarErro("Selecione um bairro."); return false; }
-        if (cbLogradouro.getValue() == null) { mostrarErro("Selecione um logradouro."); return false; }
-        
+        if (cbEstado.getValue() == null)    { mostrarErro("Selecione um estado.");     return false; }
+        if (cbCidade.getValue() == null)    { mostrarErro("Selecione uma cidade.");    return false; }
+        if (cbBairro.getValue() == null)    { mostrarErro("Selecione um bairro.");     return false; }
+        if (cbLogradouro.getValue() == null){ mostrarErro("Selecione um logradouro."); return false; }
         if (numStr.isEmpty() || !numStr.matches("\\d+")) {
             mostrarErro("Informe um número válido (apenas dígitos).");
             return false;
         }
         if (comp.isEmpty()) {
-            mostrarErro("Informe um complemento (endereço).");
+            mostrarErro("Informe um complemento do endereço.");
             return false;
         }
-        
         return true;
     }
 
@@ -510,19 +529,23 @@ public class TelaCadastroFuncionario {
         lblMensagem.setText("");
         if (!validarCampos()) return;
 
-        Funcionario f = new Funcionario(
-            tfNome.getText().trim(), tfCpf.getText().trim(),
-            tfCargo.getText().trim(), tfTelefone.getText().trim(),
-            tfEmail.getText().trim(), pfSenha.getText().trim()
+        Empresa emp = new Empresa(
+            tfCnpj.getText().trim(),
+            tfRazaoSocial.getText().trim(),
+            tfNomeFantasia.getText().trim(),
+            tfInscricaoEstadual.getText().trim(),
+            tfNomeEmpresa.getText().trim(),
+            tfEmail.getText().trim(),
+            pfSenha.getText().trim()
         );
-        
-        int numero = Integer.parseInt(tfNumero.getText().trim());
-        String comp = tfComplemento.getText().trim();
-        int idLogradouro = cbLogradouro.getValue().getIdLogradouro();
-        
+
+        int numero        = Integer.parseInt(tfNumero.getText().trim());
+        String comp       = tfComplemento.getText().trim();
+        int idLogradouro  = cbLogradouro.getValue().getIdLogradouro();
+
         try {
-            new FuncionarioController(f).salvarComEndereco(comp, numero, idLogradouro);
-            mostrarSucesso("Funcionário cadastrado com sucesso!");
+            new EmpresaController(emp).salvarComEndereco(comp, numero, idLogradouro);
+            mostrarSucesso("Empresa cadastrada com sucesso!");
             limparCampos();
         } catch (IllegalArgumentException ex) {
             mostrarErro(ex.getMessage());
@@ -535,7 +558,6 @@ public class TelaCadastroFuncionario {
     private void mostrarErro(String msg) {
         lblMensagem.setTextFill(Color.web("#FF3B5C"));
         lblMensagem.setText("⚠  " + msg);
-        // Shake animation
         TranslateTransition shake = new TranslateTransition(Duration.millis(55), lblMensagem);
         shake.setFromX(-7); shake.setToX(7);
         shake.setCycleCount(5); shake.setAutoReverse(true);
@@ -548,17 +570,18 @@ public class TelaCadastroFuncionario {
     }
 
     private void limparCampos() {
-        tfNome.clear(); tfCpf.clear(); tfCargo.clear();
-        tfTelefone.clear(); tfEmail.clear(); pfSenha.clear();
+        tfNomeEmpresa.clear(); tfCnpj.clear(); tfRazaoSocial.clear();
+        tfNomeFantasia.clear(); tfInscricaoEstadual.clear();
+        tfEmail.clear(); pfSenha.clear();
         tfNumero.clear(); tfComplemento.clear();
         cbEstado.getSelectionModel().clearSelection();
-        cbCidade.getItems().clear(); cbCidade.setDisable(true);
-        cbBairro.getItems().clear(); cbBairro.setDisable(true);
+        cbCidade.getItems().clear();  cbCidade.setDisable(true);
+        cbBairro.getItems().clear();  cbBairro.setDisable(true);
         cbLogradouro.getItems().clear(); cbLogradouro.setDisable(true);
     }
-    
+
     // ── Loaders DB ─────────────────────────────────────────────────────
-    
+
     private void carregarEstados() {
         try {
             Conexao.conectar();
@@ -570,7 +593,7 @@ public class TelaCadastroFuncionario {
             Conexao.desconectar();
         }
     }
-    
+
     private void carregarCidades(int idEstado) {
         try {
             Conexao.conectar();
@@ -582,7 +605,7 @@ public class TelaCadastroFuncionario {
             Conexao.desconectar();
         }
     }
-    
+
     private void carregarBairros(int idCidade) {
         try {
             Conexao.conectar();
@@ -594,7 +617,7 @@ public class TelaCadastroFuncionario {
             Conexao.desconectar();
         }
     }
-    
+
     private void carregarLogradouros(int idBairro) {
         try {
             Conexao.conectar();
