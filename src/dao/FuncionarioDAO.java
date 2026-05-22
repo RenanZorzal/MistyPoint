@@ -42,7 +42,7 @@ public class FuncionarioDAO {
 	
 	public void inserir(Funcionario funcionario) throws SQLException {
 		String sql = "INSERT INTO funcionario (nomefuncionario,cpffuncionario,cargo,telefone,emailfuncionario, "
-				+ "senhafuncionario,idendereco,idempresa) VALUES (?,?,?,?,?,?,?,1)";
+				+ "senhafuncionario,idendereco,idempresa) VALUES (?,?,?,?,?,?,?,?)";
 		PreparedStatement stmt = conn.prepareStatement(sql);
 		stmt.setString(1, funcionario.getNome());
 		stmt.setString(2, funcionario.getCpf());
@@ -51,6 +51,7 @@ public class FuncionarioDAO {
 		stmt.setString(5, funcionario.getEmail());
 		stmt.setString(6, funcionario.getSenha());
 		stmt.setInt(7, funcionario.getIdEndereco());
+		stmt.setInt(8, funcionario.getIdEmpresa());
 		
 		stmt.executeUpdate();
 		stmt.close();

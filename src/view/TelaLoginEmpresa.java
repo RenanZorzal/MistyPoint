@@ -71,6 +71,7 @@ public class TelaLoginEmpresa {
         // ── CARD ─────────────────────────────────────────────────────
         StackPane cardOuter = new StackPane();
         cardOuter.setMaxWidth(460);
+        cardOuter.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
         cardOuter.setStyle(
             "-fx-background-color: linear-gradient(to bottom right, " + PURPLE + ", " + PINK + ", " + ORANGE + ");" +
             "-fx-background-radius: 24;" +
@@ -88,15 +89,6 @@ public class TelaLoginEmpresa {
         );
 
         // ── CABEÇALHO ─────────────────────────────────────────────────
-        Label iconLabel = new Label("🏢");
-        iconLabel.setFont(Font.font(42));
-        iconLabel.setStyle(
-            "-fx-background-color: linear-gradient(to bottom right, rgba(155,89,182,0.15), rgba(255,142,83,0.15));" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 12 16 12 16;"
-        );
-        VBox.setMargin(iconLabel, new Insets(0, 0, 18, 0));
-
         Region accentLine = new Region();
         accentLine.setPrefWidth(44);
         accentLine.setPrefHeight(3);
@@ -141,6 +133,8 @@ public class TelaLoginEmpresa {
         lblMensagem = new Label();
         lblMensagem.setFont(Font.font("Helvetica Neue", 13));
         lblMensagem.setWrapText(true);
+        lblMensagem.setManaged(false);  // não ocupa espaço quando vazio
+        lblMensagem.setVisible(false);
         VBox.setMargin(lblMensagem, new Insets(14, 0, 0, 0));
 
         // ── BOTÃO ENTRAR ──────────────────────────────────────────────
@@ -168,7 +162,7 @@ public class TelaLoginEmpresa {
 
         // ── MONTAR CARD ───────────────────────────────────────────────
         card.getChildren().addAll(
-            iconLabel, accentLine, lblTitulo, lblSub,
+            accentLine, lblTitulo, lblSub,
             camposBox, btnEntrar, lblMensagem, lblLink
         );
         cardOuter.getChildren().add(card);
@@ -353,24 +347,29 @@ public class TelaLoginEmpresa {
         try {
             Conexao.conectar();
             dao.EmpresaDAO dao = new dao.EmpresaDAO(Conexao.conexao);
-            boolean ok = dao.autenticar(email, senha);
-            if (ok) {
-                mostrarSucesso("Login realizado com sucesso! Bem-vinda(o).");
-                // TODO: navegar para a tela principal da empresa
+            model.Empresa empresa = dao.autenticarRetornarEmpresa(email, senha);
+            if (empresa != null) {
+                mostrarSucesso("Login realizado com sucesso! Redirecionando...");
+                javafx.stage.Stage stage = (javafx.stage.Stage) tfEmail.getScene().getWindow();
+                TelaHomeEmpresa home = new TelaHomeEmpresa(empresa, empresa.getIdEmpresa());
+                stage.setScene(home.getScene(stage));
             } else {
+                Conexao.desconectar();
                 mostrarErro("E-mail ou senha incorretos.");
             }
         } catch (Exception ex) {
             mostrarErro("Erro ao conectar: " + ex.getMessage());
             ex.printStackTrace();
-        } finally {
             Conexao.desconectar();
         }
     }
 
+
     private void mostrarErro(String msg) {
+        lblMensagem.setManaged(true);
+        lblMensagem.setVisible(true);
         lblMensagem.setTextFill(Color.web("#FF3B5C"));
-        lblMensagem.setText("⚠  " + msg);
+        lblMensagem.setText(msg);
         TranslateTransition shake = new TranslateTransition(Duration.millis(55), lblMensagem);
         shake.setFromX(-7); shake.setToX(7);
         shake.setCycleCount(5); shake.setAutoReverse(true);
@@ -378,7 +377,9 @@ public class TelaLoginEmpresa {
     }
 
     private void mostrarSucesso(String msg) {
+        lblMensagem.setManaged(true);
+        lblMensagem.setVisible(true);
         lblMensagem.setTextFill(Color.web("#34C759"));
-        lblMensagem.setText("✓  " + msg);
+        lblMensagem.setText(msg);
     }
 }

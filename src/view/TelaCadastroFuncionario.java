@@ -50,6 +50,11 @@ public class TelaCadastroFuncionario {
     private static final String CARD_BG = "#0F081E";
     private static final String TEXT_SEC = "#9B8EC4";
 
+    // Navegação de volta
+    private javafx.stage.Stage  stage;
+    private model.Empresa       empresaLogada;
+    private int                 idEmpresa;
+
     private TextField              tfNome;
     private TextField              tfCpf;
     private TextField              tfCargo;
@@ -63,6 +68,16 @@ public class TelaCadastroFuncionario {
     private TextField              tfComplemento;
     private TextField              tfNumero;
     private Label                  lblMensagem;
+
+    /** Construtor padrão (sem navegação de volta) */
+    public TelaCadastroFuncionario() {}
+
+    /** Construtor com navegação — chamado a partir da TelaHomeEmpresa */
+    public TelaCadastroFuncionario(javafx.stage.Stage stage, model.Empresa empresa, int idEmpresa) {
+        this.stage         = stage;
+        this.empresaLogada = empresa;
+        this.idEmpresa     = idEmpresa;
+    }
 
     public Scene getScene() {
 
@@ -242,8 +257,44 @@ public class TelaCadastroFuncionario {
         btnCadastrar.setOnMouseExited(e ->  { btnCadastrar.setStyle(estiloBotao(false)); hoverOut.play(); });
         btnCadastrar.setOnAction(e -> handleCadastro());
 
+        // ── BOTÃO VOLTAR (só aparece se veio da home) ────────────────────────
+        Button btnVoltar = new Button("< Voltar ao Painel");
+        btnVoltar.setPrefHeight(36);
+        btnVoltar.setFont(Font.font("Helvetica Neue", 13));
+        btnVoltar.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: " + TEXT_SEC + ";" +
+            "-fx-cursor: hand;" +
+            "-fx-border-color: #2D1F4A;" +
+            "-fx-border-radius: 10;" +
+            "-fx-border-width: 1;" +
+            "-fx-background-radius: 10;"
+        );
+        btnVoltar.setOnMouseEntered(e -> btnVoltar.setStyle(
+            "-fx-background-color: #1A0D2E;" +
+            "-fx-text-fill: white;" +
+            "-fx-cursor: hand;" +
+            "-fx-border-color: " + PURPLE + ";" +
+            "-fx-border-radius: 10;" +
+            "-fx-border-width: 1;" +
+            "-fx-background-radius: 10;"
+        ));
+        btnVoltar.setOnMouseExited(e -> btnVoltar.setStyle(
+            "-fx-background-color: transparent;" +
+            "-fx-text-fill: " + TEXT_SEC + ";" +
+            "-fx-cursor: hand;" +
+            "-fx-border-color: #2D1F4A;" +
+            "-fx-border-radius: 10;" +
+            "-fx-border-width: 1;" +
+            "-fx-background-radius: 10;"
+        ));
+        btnVoltar.setOnAction(e -> voltarParaHome());
+        btnVoltar.setVisible(stage != null);
+        btnVoltar.setManaged(stage != null);
+        VBox.setMargin(btnVoltar, new Insets(10, 0, 0, 0));
+
         // ── MONTAR CARD ───────────────────────────────────────────────
-        card.getChildren().addAll(accentLine, lblTitulo, lblSub, camposBox, btnCadastrar, lblMensagem);
+        card.getChildren().addAll(accentLine, lblTitulo, lblSub, camposBox, btnCadastrar, lblMensagem, btnVoltar);
         cardOuter.getChildren().add(card);
 
         root.getChildren().addAll(bgLayer, cardOuter);
@@ -515,6 +566,7 @@ public class TelaCadastroFuncionario {
             tfCargo.getText().trim(), tfTelefone.getText().trim(),
             tfEmail.getText().trim(), pfSenha.getText().trim()
         );
+        f.setIdEmpresa(this.idEmpresa);
         
         int numero = Integer.parseInt(tfNumero.getText().trim());
         String comp = tfComplemento.getText().trim();
@@ -545,6 +597,20 @@ public class TelaCadastroFuncionario {
     private void mostrarSucesso(String msg) {
         lblMensagem.setTextFill(Color.web("#34C759"));
         lblMensagem.setText("✓  " + msg);
+        // Após sucesso, volta automaticamente para a home em 1.5s
+        if (stage != null) {
+            javafx.animation.PauseTransition pausa =
+                new javafx.animation.PauseTransition(javafx.util.Duration.millis(1500));
+            pausa.setOnFinished(e -> voltarParaHome());
+            pausa.play();
+        }
+    }
+
+    private void voltarParaHome() {
+        if (stage != null) {
+            TelaHomeEmpresa home = new TelaHomeEmpresa(empresaLogada, idEmpresa);
+            stage.setScene(home.getScene(stage));
+        }
     }
 
     private void limparCampos() {

@@ -72,6 +72,7 @@ public class TelaLoginFuncionario {
         // ── CARD ─────────────────────────────────────────────────────
         StackPane cardOuter = new StackPane();
         cardOuter.setMaxWidth(460);
+        cardOuter.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
         cardOuter.setStyle(
             "-fx-background-color: linear-gradient(to bottom right, " + PINK + ", " + ORANGE + ", " + PURPLE + ");" +
             "-fx-background-radius: 24;" +
@@ -88,17 +89,7 @@ public class TelaLoginFuncionario {
             "-fx-background-radius: 23;"
         );
 
-        // ── CABEÇALHO ─────────────────────────────────────────────────
-        // Ícone de usuário estilizado
-        Label iconLabel = new Label("👤");
-        iconLabel.setFont(Font.font(42));
-        iconLabel.setStyle(
-            "-fx-background-color: linear-gradient(to bottom right, rgba(255,107,138,0.15), rgba(155,89,182,0.15));" +
-            "-fx-background-radius: 20;" +
-            "-fx-padding: 12 16 12 16;"
-        );
-        VBox.setMargin(iconLabel, new Insets(0, 0, 18, 0));
-
+        // ── CABEÇALHO ─────────────────────────────────────────────────────────
         Region accentLine = new Region();
         accentLine.setPrefWidth(44);
         accentLine.setPrefHeight(3);
@@ -170,7 +161,7 @@ public class TelaLoginFuncionario {
 
         // ── MONTAR CARD ───────────────────────────────────────────────
         card.getChildren().addAll(
-            iconLabel, accentLine, lblTitulo, lblSub,
+            accentLine, lblTitulo, lblSub,
             camposBox, btnEntrar, lblMensagem, lblLink
         );
         cardOuter.getChildren().add(card);

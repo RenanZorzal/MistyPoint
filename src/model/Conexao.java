@@ -8,7 +8,7 @@ import java.sql.SQLException;
 
 
 public class Conexao {
-	private static String server ="jdbc:sqlserver://localhost\\SQLEXPRESS;";
+	private static String server = "jdbc:sqlserver://localhost\\SQLEXPRESS;";
 	private static String banco	= "databaseName=DA123_Exerc_G08;";
 	private static String usuario = "integratedSecurity=true;encrypt=true;trustServerCertificate=true;loginTimeout=30;";
 	

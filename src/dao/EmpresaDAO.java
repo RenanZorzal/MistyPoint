@@ -97,4 +97,35 @@ public class EmpresaDAO {
         stmt.close();
         return count > 0;
     }
+
+    /**
+     * Autentica e retorna o objeto Empresa completo (com id).
+     * Retorna null se e-mail/senha forem incorretos.
+     */
+    public Empresa autenticarRetornarEmpresa(String email, String senha) throws SQLException {
+        String sql = "SELECT idempresa, cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
+                     "nomeempresa, emailempresa, senhaempresa " +
+                     "FROM empresa WHERE emailempresa = ? AND senhaempresa = ?";
+        PreparedStatement stmt = conn.prepareStatement(sql);
+        stmt.setString(1, email);
+        stmt.setString(2, senha);
+        ResultSet rs = stmt.executeQuery();
+        Empresa emp = null;
+        if (rs.next()) {
+            emp = new Empresa(
+                rs.getString("cnpj"),
+                rs.getString("razaosocial"),
+                rs.getString("nomefantasia"),
+                rs.getString("inscricaoestadual"),
+                rs.getString("nomeempresa"),
+                rs.getString("emailempresa"),
+                rs.getString("senhaempresa")
+            );
+            emp.setIdEmpresa(rs.getInt("idempresa"));
+        }
+        rs.close();
+        stmt.close();
+        return emp;
+    }
 }
+

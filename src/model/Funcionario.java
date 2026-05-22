@@ -8,6 +8,7 @@ public class Funcionario {
 	private String email;
 	private String senha;
 	private int    idEndereco;
+	private int    idEmpresa;
 	
 	public Funcionario(String nome, String cpf, String cargo, String telefone, String email, String senha) {
 		super();
@@ -77,6 +78,14 @@ public class Funcionario {
 
 	public void setIdEndereco(int idEndereco) {
 		this.idEndereco = idEndereco;
+	}
+
+	public int getIdEmpresa() {
+		return idEmpresa;
+	}
+
+	public void setIdEmpresa(int idEmpresa) {
+		this.idEmpresa = idEmpresa;
 	}
 
 	
