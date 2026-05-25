@@ -57,6 +57,28 @@ public class FuncionarioDAO {
 		stmt.close();
 	}
 
+	/** Atualiza os dados de um funcionário pelo id */
+	public void atualizar(int id, String nome, String cargo, String telefone, String email) throws SQLException {
+		String sql = "UPDATE funcionario SET nomefuncionario=?, cargo=?, telefone=?, emailfuncionario=? WHERE idfuncionario=?";
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		stmt.setString(1, nome);
+		stmt.setString(2, cargo);
+		stmt.setString(3, telefone);
+		stmt.setString(4, email);
+		stmt.setInt(5, id);
+		stmt.executeUpdate();
+		stmt.close();
+	}
+
+	/** Exclui um funcionário pelo id */
+	public void excluir(int id) throws SQLException {
+		String sql = "DELETE FROM funcionario WHERE idfuncionario=?";
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		stmt.setInt(1, id);
+		stmt.executeUpdate();
+		stmt.close();
+	}
+
 	/** Retorna true se o e-mail e senha batem com um registro existente */
 	public boolean autenticar(String email, String senha) throws SQLException {
 		String sql = "SELECT COUNT(*) FROM funcionario WHERE emailfuncionario = ? AND senhafuncionario = ?";
