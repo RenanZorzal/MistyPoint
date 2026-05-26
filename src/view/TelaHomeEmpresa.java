@@ -84,6 +84,9 @@ public class TelaHomeEmpresa {
     private Button btnAbaFuncionarios;
     private Button btnAbaPontos;
 
+    // Raiz da cena — usada para exibir overlays in-page
+    private StackPane rootPane;
+
     public TelaHomeEmpresa(Empresa empresa, int idEmpresa) {
         this.empresa   = empresa;
         this.idEmpresa = idEmpresa;
@@ -117,7 +120,7 @@ public class TelaHomeEmpresa {
         animarOrb(orb3,  60, -40,  8000);
 
         // ── RAIZ DA CENA: layout atrás, orbs na frente (mas sem capturar mouse) ──
-        StackPane root = new StackPane(layout, bgLayer);
+        rootPane = new StackPane(layout, bgLayer);
 
         // Carregar dados
         carregarDados();
@@ -130,7 +133,7 @@ public class TelaHomeEmpresa {
             translX(mainContent, 20, 0, 600)
         ).play();
 
-        Scene scene = new Scene(root, 1280, 720);
+        Scene scene = new Scene(rootPane, 1280, 720);
         scene.getStylesheets().add(gerarCssTabela());
         return scene;
     }
@@ -224,7 +227,7 @@ public class TelaHomeEmpresa {
         btnSair.setOnMouseExited(e -> btnSair.setStyle(estiloBotaoNav(false)));
         btnSair.setOnAction(e -> {
             Conexao.desconectar();
-            stage.setScene(new TelaLoginEmpresa().getScene());
+            stage.setScene(new TelaLoginEmpresa().getScene(stage));
         });
         VBox.setMargin(btnSair, new Insets(0, 12, 20, 12));
 
@@ -616,25 +619,30 @@ public class TelaHomeEmpresa {
     //  MODAL DE EDIÇÃO DE FUNCIONÁRIO
     // ──────────────────────────────────────────────────────────────────
     private void abrirModalEdicao(FuncionarioRow row) {
-        Stage modal = new Stage(StageStyle.TRANSPARENT);
-        modal.initModality(Modality.APPLICATION_MODAL);
-
-        // Fundo com blur
+        // ── Overlay in-page (sem nova janela) ──────────────────────────
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+        overlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
 
-        // Card central
+        // Wrapper que limita a altura ao conteúdo (mesmo padrão do login)
+        StackPane cardOuter = new StackPane();
+        cardOuter.setMaxWidth(480);
+        cardOuter.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        cardOuter.setStyle(
+            "-fx-background-color: linear-gradient(to bottom right, " + PURPLE + ", #FF6B8A, " + ORANGE + ");" +
+            "-fx-background-radius: 22;" +
+            "-fx-padding: 1.5;"
+        );
+        DropShadow glow = new DropShadow(40, Color.web(PURPLE, 0.5));
+        glow.setSpread(0.05);
+        cardOuter.setEffect(glow);
+
+        // Card interno
         VBox card = new VBox(18);
         card.setPadding(new Insets(32, 36, 32, 36));
-        card.setPrefWidth(460);
-        card.setMaxWidth(460);
         card.setStyle(
             "-fx-background-color: #0F081E;" +
-            "-fx-background-radius: 20;" +
-            "-fx-border-color: " + BORDER + ";" +
-            "-fx-border-radius: 20;" +
-            "-fx-border-width: 1;" +
-            "-fx-effect: dropshadow(gaussian, rgba(155,89,182,0.45), 40, 0, 0, 8);"
+            "-fx-background-radius: 21;"
         );
 
         // Título
@@ -645,6 +653,7 @@ public class TelaHomeEmpresa {
         Region gradLine = new Region();
         gradLine.setPrefHeight(2);
         gradLine.setStyle("-fx-background-color: linear-gradient(to right, " + PURPLE + ", " + ORANGE + ");");
+        VBox.setMargin(gradLine, new Insets(0, 0, 4, 0));
 
         // Campos do formulário
         GridPane form = new GridPane();
@@ -670,6 +679,13 @@ public class TelaHomeEmpresa {
         // Botões
         HBox botoes = new HBox(12);
         botoes.setAlignment(Pos.CENTER_RIGHT);
+        VBox.setMargin(botoes, new Insets(8, 0, 0, 0));
+
+        Runnable fechar = () -> {
+            FadeTransition ftOut = fade(overlay, 1, 0, 180);
+            ftOut.setOnFinished(ev -> rootPane.getChildren().remove(overlay));
+            ftOut.play();
+        };
 
         Button btnCancelar = new Button("Cancelar");
         btnCancelar.setPrefHeight(40);
@@ -678,7 +694,12 @@ public class TelaHomeEmpresa {
             "-fx-background-color: transparent; -fx-text-fill: " + TEXT_SEC + ";" +
             "-fx-border-color: " + BORDER + "; -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand; -fx-padding: 0 18 0 18;"
         );
-        btnCancelar.setOnAction(e -> modal.close());
+        btnCancelar.setOnAction(e -> fechar.run());
+
+        // Clique no fundo escuro também fecha
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) fechar.run();
+        });
 
         Button btnSalvar = new Button("Salvar alterações");
         btnSalvar.setPrefHeight(40);
@@ -704,7 +725,7 @@ public class TelaHomeEmpresa {
                 FuncionarioDAO dao = new FuncionarioDAO(Conexao.conexao);
                 dao.atualizar(row.getId(), nome, cargo, telefone, email);
                 Conexao.desconectar();
-                modal.close();
+                fechar.run();
                 carregarDados();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -714,53 +735,59 @@ public class TelaHomeEmpresa {
 
         botoes.getChildren().addAll(btnCancelar, btnSalvar);
         card.getChildren().addAll(lblTitulo, gradLine, form, botoes);
+        cardOuter.getChildren().add(card);
 
-        overlay.getChildren().add(card);
-        StackPane.setAlignment(card, Pos.CENTER);
+        overlay.getChildren().add(cardOuter);
+        StackPane.setAlignment(cardOuter, Pos.CENTER);
+        StackPane.setMargin(cardOuter, new Insets(20));
 
-        Scene cena = new Scene(overlay, 1280, 720);
-        cena.setFill(Color.TRANSPARENT);
-        modal.setScene(cena);
+        // Adiciona o overlay por cima de tudo na cena
+        rootPane.getChildren().add(overlay);
 
         // Animação de entrada
-        card.setOpacity(0);
-        card.setScaleX(0.92);
-        card.setScaleY(0.92);
-        ScaleTransition stEdit = new ScaleTransition(Duration.millis(250), card);
+        overlay.setOpacity(0);
+        cardOuter.setScaleX(0.92);
+        cardOuter.setScaleY(0.92);
+        ScaleTransition stEdit = new ScaleTransition(Duration.millis(250), cardOuter);
         stEdit.setFromX(0.92); stEdit.setFromY(0.92);
         stEdit.setToX(1.0);   stEdit.setToY(1.0);
         stEdit.setInterpolator(Interpolator.EASE_OUT);
-        ParallelTransition pt = new ParallelTransition(fade(card, 0, 1, 250), stEdit);
-        modal.setOnShown(ev -> pt.play());
-        modal.showAndWait();
+        new ParallelTransition(fade(overlay, 0, 1, 250), stEdit).play();
     }
 
     // ──────────────────────────────────────────────────────────────────
     //  CONFIRMAÇÃO DE EXCLUSÃO
     // ──────────────────────────────────────────────────────────────────
     private void confirmarExclusao(FuncionarioRow row) {
-        Stage modal = new Stage(StageStyle.TRANSPARENT);
-        modal.initModality(Modality.APPLICATION_MODAL);
-
+        // ── Overlay in-page (sem nova janela) ──────────────────────────
         StackPane overlay = new StackPane();
-        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.55);");
+        overlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
 
-        VBox card = new VBox(18);
-        card.setPadding(new Insets(32, 36, 32, 36));
-        card.setPrefWidth(400);
-        card.setMaxWidth(400);
+        // Wrapper com borda vermelha (mesmo padrão do login, mas vermelho)
+        StackPane cardOuter = new StackPane();
+        cardOuter.setMaxWidth(420);
+        cardOuter.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        cardOuter.setStyle(
+            "-fx-background-color: linear-gradient(to bottom right, #FF3B5C, #FF6B8A, #CC1F3A);" +
+            "-fx-background-radius: 22;" +
+            "-fx-padding: 1.5;"
+        );
+        DropShadow glowRed = new DropShadow(40, Color.web("#FF3B5C", 0.55));
+        glowRed.setSpread(0.05);
+        cardOuter.setEffect(glowRed);
+
+        // Card interno
+        VBox card = new VBox(16);
+        card.setPadding(new Insets(36, 40, 36, 40));
         card.setAlignment(Pos.CENTER);
         card.setStyle(
             "-fx-background-color: #0F081E;" +
-            "-fx-background-radius: 20;" +
-            "-fx-border-color: #FF3B5C;" +
-            "-fx-border-radius: 20;" +
-            "-fx-border-width: 1;" +
-            "-fx-effect: dropshadow(gaussian, rgba(255,59,92,0.35), 40, 0, 0, 8);"
+            "-fx-background-radius: 21;"
         );
 
         Label icone = new Label("⚠");
-        icone.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 36));
+        icone.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 40));
         icone.setTextFill(Color.web("#FF3B5C"));
 
         Label msg = new Label("Excluir funcionário?");
@@ -776,9 +803,16 @@ public class TelaHomeEmpresa {
         Label aviso = new Label("Esta ação é irreversível.");
         aviso.setFont(Font.font("Helvetica Neue", 12));
         aviso.setTextFill(Color.web("#FF3B5C", 0.8));
+        VBox.setMargin(aviso, new Insets(0, 0, 8, 0));
 
         HBox botoes = new HBox(12);
         botoes.setAlignment(Pos.CENTER);
+
+        Runnable fechar = () -> {
+            FadeTransition ftOut = fade(overlay, 1, 0, 180);
+            ftOut.setOnFinished(ev -> rootPane.getChildren().remove(overlay));
+            ftOut.play();
+        };
 
         Button btnCancelar = new Button("Cancelar");
         btnCancelar.setPrefHeight(40);
@@ -787,7 +821,12 @@ public class TelaHomeEmpresa {
             "-fx-background-color: transparent; -fx-text-fill: " + TEXT_SEC + ";" +
             "-fx-border-color: " + BORDER + "; -fx-border-radius: 10; -fx-background-radius: 10; -fx-cursor: hand; -fx-padding: 0 18 0 18;"
         );
-        btnCancelar.setOnAction(e -> modal.close());
+        btnCancelar.setOnAction(e -> fechar.run());
+
+        // Clique no fundo escuro também fecha
+        overlay.setOnMouseClicked(e -> {
+            if (e.getTarget() == overlay) fechar.run();
+        });
 
         Button btnExcluir = new Button("Sim, excluir");
         btnExcluir.setPrefHeight(40);
@@ -804,7 +843,7 @@ public class TelaHomeEmpresa {
                 FuncionarioDAO dao = new FuncionarioDAO(Conexao.conexao);
                 dao.excluir(row.getId());
                 Conexao.desconectar();
-                modal.close();
+                fechar.run();
                 carregarDados();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -814,24 +853,24 @@ public class TelaHomeEmpresa {
 
         botoes.getChildren().addAll(btnCancelar, btnExcluir);
         card.getChildren().addAll(icone, msg, detalhe, aviso, botoes);
+        cardOuter.getChildren().add(card);
 
-        overlay.getChildren().add(card);
-        StackPane.setAlignment(card, Pos.CENTER);
+        overlay.getChildren().add(cardOuter);
+        StackPane.setAlignment(cardOuter, Pos.CENTER);
+        StackPane.setMargin(cardOuter, new Insets(20));
 
-        Scene cena = new Scene(overlay, 1280, 720);
-        cena.setFill(Color.TRANSPARENT);
-        modal.setScene(cena);
+        // Adiciona o overlay por cima de tudo na cena
+        rootPane.getChildren().add(overlay);
 
-        card.setOpacity(0);
-        card.setScaleX(0.92);
-        card.setScaleY(0.92);
-        ScaleTransition stDel = new ScaleTransition(Duration.millis(250), card);
+        // Animação de entrada
+        overlay.setOpacity(0);
+        cardOuter.setScaleX(0.92);
+        cardOuter.setScaleY(0.92);
+        ScaleTransition stDel = new ScaleTransition(Duration.millis(250), cardOuter);
         stDel.setFromX(0.92); stDel.setFromY(0.92);
         stDel.setToX(1.0);   stDel.setToY(1.0);
         stDel.setInterpolator(Interpolator.EASE_OUT);
-        ParallelTransition ptDel = new ParallelTransition(fade(card, 0, 1, 250), stDel);
-        modal.setOnShown(ev -> ptDel.play());
-        modal.showAndWait();
+        new ParallelTransition(fade(overlay, 0, 1, 250), stDel).play();
     }
 
     // ── Helpers do formulário de edição ──────────────────────────────

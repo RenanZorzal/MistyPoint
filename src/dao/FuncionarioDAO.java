@@ -92,4 +92,34 @@ public class FuncionarioDAO {
 		stmt.close();
 		return count > 0;
 	}
+
+	/**
+	 * Autentica e retorna o objeto Funcionario completo (com id).
+	 * Retorna null se e-mail/senha forem incorretos.
+	 */
+	public Funcionario autenticarRetornarFuncionario(String email, String senha) throws SQLException {
+		String sql = "SELECT idfuncionario, nomefuncionario, cpffuncionario, cargo, telefone, "
+				 + "emailfuncionario, senhafuncionario, idendereco, idempresa "
+				 + "FROM funcionario WHERE emailfuncionario = ? AND senhafuncionario = ?";
+		PreparedStatement stmt = conn.prepareStatement(sql);
+		stmt.setString(1, email);
+		stmt.setString(2, senha);
+		ResultSet rs = stmt.executeQuery();
+		Funcionario f = null;
+		if (rs.next()) {
+			f = new Funcionario();
+			f.setIdFuncionario(rs.getInt("idfuncionario"));
+			f.setNome(rs.getString("nomefuncionario"));
+			f.setCpf(rs.getString("cpffuncionario"));
+			f.setCargo(rs.getString("cargo"));
+			f.setTelefone(rs.getString("telefone"));
+			f.setEmail(rs.getString("emailfuncionario"));
+			f.setSenha(rs.getString("senhafuncionario"));
+			f.setIdEndereco(rs.getInt("idendereco"));
+			f.setIdEmpresa(rs.getInt("idempresa"));
+		}
+		rs.close();
+		stmt.close();
+		return f;
+	}
 }

@@ -29,6 +29,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import javafx.stage.Stage;
 import model.Conexao;
 
 public class TelaLoginEmpresa {
@@ -45,7 +46,7 @@ public class TelaLoginEmpresa {
     private PasswordField pfSenha;
     private Label         lblMensagem;
 
-    public Scene getScene() {
+    public Scene getScene(Stage stage) {
 
         // ── ROOT ─────────────────────────────────────────────────────
         StackPane root = new StackPane();
@@ -149,27 +150,44 @@ public class TelaLoginEmpresa {
         btnEntrar.setOnMouseExited(e ->  { btnEntrar.setStyle(estiloBotao(false)); escala(btnEntrar, 1.025, 1.00, 150).play(); });
         btnEntrar.setOnAction(e -> handleLogin());
 
-        // ── LINK CADASTRO ─────────────────────────────────────────────
-        Label lblLink = new Label("Ainda não tem conta?  Cadastre sua empresa");
-        lblLink.setFont(Font.font("Helvetica Neue", 12));
-        lblLink.setTextFill(Color.web(TEXT_SEC));
-        lblLink.setStyle("-fx-cursor: hand;");
-        lblLink.setAlignment(Pos.CENTER);
-        lblLink.setMaxWidth(Double.MAX_VALUE);
-        VBox.setMargin(lblLink, new Insets(18, 0, 0, 0));
-        lblLink.setOnMouseEntered(e -> lblLink.setTextFill(Color.web(PURPLE)));
-        lblLink.setOnMouseExited(e ->  lblLink.setTextFill(Color.web(TEXT_SEC)));
+
 
         // ── MONTAR CARD ───────────────────────────────────────────────
         card.getChildren().addAll(
             accentLine, lblTitulo, lblSub,
-            camposBox, btnEntrar, lblMensagem, lblLink
+            camposBox, btnEntrar, lblMensagem
         );
         cardOuter.getChildren().add(card);
 
         root.getChildren().addAll(bgLayer, cardOuter);
         StackPane.setAlignment(cardOuter, Pos.CENTER);
         StackPane.setMargin(cardOuter, new Insets(20));
+
+        // ── BOTÃO VOLTAR ─────────────────────────────────────────────
+        Button btnVoltar = new Button("←  Voltar");
+        btnVoltar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 12));
+        btnVoltar.setStyle(
+            "-fx-background-color: rgba(155,89,182,0.15);" +
+            "-fx-border-color: rgba(155,89,182,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + PURPLE + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        );
+        btnVoltar.setOnMouseEntered(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(155,89,182,0.28);" +
+            "-fx-border-color: " + PURPLE + ";" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: white; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnMouseExited(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(155,89,182,0.15);" +
+            "-fx-border-color: rgba(155,89,182,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + PURPLE + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnAction(e -> stage.setScene(new TelaLanding().getScene(stage)));
+        StackPane.setAlignment(btnVoltar, Pos.TOP_LEFT);
+        StackPane.setMargin(btnVoltar, new Insets(20, 0, 0, 20));
+        root.getChildren().add(btnVoltar);
 
         // ── ANIMAÇÃO DE ENTRADA ───────────────────────────────────────
         cardOuter.setOpacity(0);

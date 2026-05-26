@@ -1,6 +1,7 @@
 package model;
 
 public class Funcionario {
+	private int    idFuncionario;
 	private String nome;
 	private String cpf;
 	private String cargo;
@@ -22,6 +23,14 @@ public class Funcionario {
 	
 	public Funcionario() {
 		super();
+	}
+
+	public int getIdFuncionario() {
+		return idFuncionario;
+	}
+
+	public void setIdFuncionario(int idFuncionario) {
+		this.idFuncionario = idFuncionario;
 	}
 	
 	public String getNome() {

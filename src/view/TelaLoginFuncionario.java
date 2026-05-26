@@ -30,6 +30,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
+import javafx.stage.Stage;
 import model.Conexao;
 
 public class TelaLoginFuncionario {
@@ -46,7 +47,7 @@ public class TelaLoginFuncionario {
     private PasswordField pfSenha;
     private Label         lblMensagem;
 
-    public Scene getScene() {
+    public Scene getScene(Stage stage) {
 
         // ── ROOT ─────────────────────────────────────────────────────
         StackPane root = new StackPane();
@@ -148,27 +149,44 @@ public class TelaLoginFuncionario {
         btnEntrar.setOnMouseExited(e ->  { btnEntrar.setStyle(estiloBotao(false)); escala(btnEntrar, 1.025, 1.00, 150).play(); });
         btnEntrar.setOnAction(e -> handleLogin());
 
-        // ── LINK CADASTRO ─────────────────────────────────────────────
-        Label lblLink = new Label("Ainda não tem conta?  Cadastre-se");
-        lblLink.setFont(Font.font("Helvetica Neue", 12));
-        lblLink.setTextFill(Color.web(TEXT_SEC));
-        lblLink.setStyle("-fx-cursor: hand;");
-        lblLink.setAlignment(Pos.CENTER);
-        lblLink.setMaxWidth(Double.MAX_VALUE);
-        VBox.setMargin(lblLink, new Insets(18, 0, 0, 0));
-        lblLink.setOnMouseEntered(e -> lblLink.setTextFill(Color.web(PINK)));
-        lblLink.setOnMouseExited(e ->  lblLink.setTextFill(Color.web(TEXT_SEC)));
+
 
         // ── MONTAR CARD ───────────────────────────────────────────────
         card.getChildren().addAll(
             accentLine, lblTitulo, lblSub,
-            camposBox, btnEntrar, lblMensagem, lblLink
+            camposBox, btnEntrar, lblMensagem
         );
         cardOuter.getChildren().add(card);
 
         root.getChildren().addAll(bgLayer, cardOuter);
         StackPane.setAlignment(cardOuter, Pos.CENTER);
         StackPane.setMargin(cardOuter, new Insets(20));
+
+        // ── BOTÃO VOLTAR ─────────────────────────────────────────────
+        javafx.scene.control.Button btnVoltar = new javafx.scene.control.Button("←  Voltar");
+        btnVoltar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 12));
+        btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,107,138,0.15);" +
+            "-fx-border-color: rgba(255,107,138,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + PINK + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        );
+        btnVoltar.setOnMouseEntered(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,107,138,0.28);" +
+            "-fx-border-color: " + PINK + ";" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: white; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnMouseExited(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,107,138,0.15);" +
+            "-fx-border-color: rgba(255,107,138,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + PINK + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnAction(e -> stage.setScene(new TelaLanding().getScene(stage)));
+        StackPane.setAlignment(btnVoltar, Pos.TOP_LEFT);
+        StackPane.setMargin(btnVoltar, new Insets(20, 0, 0, 20));
+        root.getChildren().add(btnVoltar);
 
         // ── ANIMAÇÃO DE ENTRADA ───────────────────────────────────────
         cardOuter.setOpacity(0);
@@ -348,17 +366,19 @@ public class TelaLoginFuncionario {
         try {
             Conexao.conectar();
             dao.FuncionarioDAO dao = new dao.FuncionarioDAO(Conexao.conexao);
-            boolean ok = dao.autenticar(email, senha);
-            if (ok) {
-                mostrarSucesso("Login realizado com sucesso! Bem-vindo(a).");
-                // TODO: navegar para a tela principal do funcionário
+            model.Funcionario funcionario = dao.autenticarRetornarFuncionario(email, senha);
+            if (funcionario != null) {
+                mostrarSucesso("Login realizado com sucesso! Redirecionando...");
+                javafx.stage.Stage stage = (javafx.stage.Stage) tfEmail.getScene().getWindow();
+                TelaHomeFuncionario home = new TelaHomeFuncionario(funcionario);
+                stage.setScene(home.getScene(stage));
             } else {
+                Conexao.desconectar();
                 mostrarErro("E-mail ou senha incorretos.");
             }
         } catch (Exception ex) {
             mostrarErro("Erro ao conectar: " + ex.getMessage());
             ex.printStackTrace();
-        } finally {
             Conexao.desconectar();
         }
     }

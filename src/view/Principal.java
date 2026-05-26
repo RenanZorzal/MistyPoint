@@ -9,12 +9,12 @@ public class Principal extends Application{
 
     @Override
     public void start(Stage stage) {
-        // Cria a tela de login
-        TelaLoginEmpresa telaLogin = new TelaLoginEmpresa();
-        Scene scene = telaLogin.getScene();
+        // Inicia na landing page
+        TelaLanding landing = new TelaLanding();
+        Scene scene = landing.getScene(stage);
 
         // Configura o Stage (janela)
-        stage.setTitle("Sistema de Pontos");
+        stage.setTitle("MistyPoint · Sistema de Pontos");
         stage.setScene(scene);
         stage.setResizable(false);
         stage.show();

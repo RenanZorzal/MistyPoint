@@ -39,6 +39,7 @@ import model.Conexao;
 import model.Empresa;
 import model.Estado;
 import model.Logradouro;
+import javafx.stage.Stage;
 
 public class TelaCadastroEmpresa {
 
@@ -69,7 +70,7 @@ public class TelaCadastroEmpresa {
 
     private Label lblMensagem;
 
-    public Scene getScene() {
+    public Scene getScene(Stage stage) {
 
         // ── ROOT ─────────────────────────────────────────────────────
         StackPane root = new StackPane();
@@ -260,6 +261,32 @@ public class TelaCadastroEmpresa {
         root.getChildren().addAll(bgLayer, cardOuter);
         StackPane.setAlignment(cardOuter, Pos.CENTER);
         StackPane.setMargin(cardOuter, new Insets(20));
+
+        // ── BOTÃO VOLTAR ─────────────────────────────────────────────
+        Button btnVoltar = new Button("←  Voltar");
+        btnVoltar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 12));
+        btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,142,83,0.15);" +
+            "-fx-border-color: rgba(255,142,83,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + ORANGE + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        );
+        btnVoltar.setOnMouseEntered(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,142,83,0.28);" +
+            "-fx-border-color: " + ORANGE + ";" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: white; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnMouseExited(e -> btnVoltar.setStyle(
+            "-fx-background-color: rgba(255,142,83,0.15);" +
+            "-fx-border-color: rgba(255,142,83,0.40);" +
+            "-fx-border-radius: 10; -fx-background-radius: 10;" +
+            "-fx-text-fill: " + ORANGE + "; -fx-cursor: hand; -fx-padding: 7 14 7 14;"
+        ));
+        btnVoltar.setOnAction(e -> stage.setScene(new TelaLanding().getScene(stage)));
+        StackPane.setAlignment(btnVoltar, Pos.TOP_LEFT);
+        StackPane.setMargin(btnVoltar, new Insets(20, 0, 0, 20));
+        root.getChildren().add(btnVoltar);
 
         // ── ANIMAÇÃO DE ENTRADA DO CARD ───────────────────────────────
         cardOuter.setOpacity(0);
