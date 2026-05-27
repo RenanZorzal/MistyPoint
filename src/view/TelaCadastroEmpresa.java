@@ -33,12 +33,10 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
-import model.Bairro;
 import model.Cidade;
 import model.Conexao;
 import model.Empresa;
 import model.Estado;
-import model.Logradouro;
 import javafx.stage.Stage;
 
 public class TelaCadastroEmpresa {
@@ -52,21 +50,21 @@ public class TelaCadastroEmpresa {
     private static final String TEXT_SEC = "#9B8EC4";
 
     // ── Dados da empresa ─────────────────────────────────
-    private TextField   tfNomeEmpresa;
-    private TextField   tfCnpj;
-    private TextField   tfRazaoSocial;
-    private TextField   tfNomeFantasia;
-    private TextField   tfInscricaoEstadual;
-    private TextField   tfEmail;
+    private TextField     tfNomeEmpresa;
+    private TextField     tfCnpj;
+    private TextField     tfRazaoSocial;
+    private TextField     tfNomeFantasia;
+    private TextField     tfInscricaoEstadual;
+    private TextField     tfEmail;
     private PasswordField pfSenha;
 
-    // ── Endereço ─────────────────────────────────────────
-    private ComboBox<Estado>     cbEstado;
-    private ComboBox<Cidade>     cbCidade;
-    private ComboBox<Bairro>     cbBairro;
-    private ComboBox<Logradouro> cbLogradouro;
-    private TextField            tfNumero;
-    private TextField            tfComplemento;
+    // ── Endereço (flat) ───────────────────────────────────
+    private ComboBox<Estado>  cbEstado;
+    private ComboBox<Cidade>  cbCidade;
+    private TextField         tfLogradouro;
+    private TextField         tfNumero;
+    private TextField         tfComplemento;
+    private TextField         tfCep;
 
     private Label lblMensagem;
 
@@ -85,7 +83,6 @@ public class TelaCadastroEmpresa {
         Circle orb3 = criarOrb(300, ORANGE, 0.13, 130,  550,  500);
         Circle orb4 = criarOrb(250, PINK,   0.10, 110, 1150,  -80);
         bgLayer.getChildren().addAll(orb1, orb2, orb3, orb4);
-
         bgLayer.prefWidthProperty().bind(root.widthProperty());
         bgLayer.prefHeightProperty().bind(root.heightProperty());
 
@@ -96,7 +93,7 @@ public class TelaCadastroEmpresa {
 
         // ── CARD COM BORDA GRADIENTE ───────────────────────────────────
         StackPane cardOuter = new StackPane();
-        cardOuter.setMaxWidth(680);
+        cardOuter.setMaxWidth(700);
         cardOuter.setStyle(
             "-fx-background-color: linear-gradient(to bottom right, " + PINK + ", " + ORANGE + ", " + PURPLE + ");" +
             "-fx-background-radius: 24;" +
@@ -127,7 +124,6 @@ public class TelaCadastroEmpresa {
         lblTitulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 26));
         lblTitulo.setTextFill(Color.WHITE);
 
-        // Glow pulsante no título
         DropShadow titleGlow = new DropShadow(20, Color.web(PINK, 0.0));
         lblTitulo.setEffect(titleGlow);
         Timeline titlePulse = new Timeline(
@@ -146,24 +142,23 @@ public class TelaCadastroEmpresa {
         // ── CAMPOS DA EMPRESA ─────────────────────────────────────────
         tfNomeEmpresa       = criarCampo("Nome da Empresa", false);
         tfCnpj              = criarCampo("CNPJ (ex: 00.000.000/0001-00)", false);
+        MaskUtils.applyCnpjMask(tfCnpj);
         tfRazaoSocial       = criarCampo("Razão Social", false);
         tfNomeFantasia      = criarCampo("Nome Fantasia", false);
         tfInscricaoEstadual = criarCampo("Inscrição Estadual", false);
         tfEmail             = criarCampo("E-mail da Empresa", false);
         pfSenha             = (PasswordField) criarCampo("Senha (mín. 6 caracteres)", true);
 
-        // ── CAMPOS DE ENDEREÇO ────────────────────────────────────────
-        cbEstado     = criarComboBox("Selecione o Estado");
-        cbCidade     = criarComboBox("Selecione a Cidade");
-        cbBairro     = criarComboBox("Selecione o Bairro");
-        cbLogradouro = criarComboBox("Selecione o Logradouro");
+        // ── CAMPOS DE ENDEREÇO (flat: Estado → Cidade → campos livres) ─
+        cbEstado      = criarComboBox("Selecione o Estado");
+        cbCidade      = criarComboBox("Selecione a Cidade");
+        tfLogradouro  = criarCampo("Logradouro (Rua, Av, etc.)", false);
         tfNumero      = criarCampo("Número", false);
-        tfComplemento = criarCampo("Complemento (Ex: Sala 10)", false);
+        tfComplemento = criarCampo("Complemento (opcional)", false);
+        tfCep         = criarCampo("CEP (ex: 00000-000)", false);
+        MaskUtils.applyCepMask(tfCep);
 
         cbCidade.setDisable(true);
-        cbBairro.setDisable(true);
-        cbLogradouro.setDisable(true);
-
         carregarEstados();
 
         cbEstado.setOnAction(e -> {
@@ -175,55 +170,20 @@ public class TelaCadastroEmpresa {
                 cbCidade.getItems().clear();
                 cbCidade.setDisable(true);
             }
-            cbBairro.getItems().clear();
-            cbBairro.setDisable(true);
-            cbLogradouro.getItems().clear();
-            cbLogradouro.setDisable(true);
-        });
-
-        cbCidade.setOnAction(e -> {
-            Cidade cid = cbCidade.getValue();
-            if (cid != null) {
-                carregarBairros(cid.getIdCidade());
-                cbBairro.setDisable(false);
-            } else {
-                cbBairro.getItems().clear();
-                cbBairro.setDisable(true);
-            }
-            cbLogradouro.getItems().clear();
-            cbLogradouro.setDisable(true);
-        });
-
-        cbBairro.setOnAction(e -> {
-            Bairro bai = cbBairro.getValue();
-            if (bai != null) {
-                carregarLogradouros(bai.getIdBairro());
-                cbLogradouro.setDisable(false);
-            } else {
-                cbLogradouro.getItems().clear();
-                cbLogradouro.setDisable(true);
-            }
         });
 
         // ── LINHAS DO FORMULÁRIO ──────────────────────────────────────
-        // Dados da empresa: 3 linhas — última com 3 colunas (Inscrição + E-mail + Senha)
-        HBox linhaDados1 = new HBox(15, grupo("Nome da Empresa", tfNomeEmpresa), grupo("CNPJ", tfCnpj));
-        linhaDados1.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaDados2 = new HBox(15, grupo("Razão Social", tfRazaoSocial), grupo("Nome Fantasia", tfNomeFantasia));
-        linhaDados2.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaDados3 = new HBox(15,
+        HBox linhaDados1 = linha(grupo("Nome da Empresa", tfNomeEmpresa), grupo("CNPJ", tfCnpj));
+        HBox linhaDados2 = linha(grupo("Razão Social", tfRazaoSocial), grupo("Nome Fantasia", tfNomeFantasia));
+        HBox linhaDados3 = linha(
             grupo("Inscrição Estadual", tfInscricaoEstadual),
             grupo("E-mail", tfEmail),
             grupo("Senha", pfSenha));
-        linhaDados3.setAlignment(Pos.CENTER_LEFT);
 
-        // Endereço: 3 linhas
-        HBox linhaEnd1 = new HBox(15, grupo("Estado", cbEstado), grupo("Cidade", cbCidade));
-        linhaEnd1.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaEnd2 = new HBox(15, grupo("Bairro", cbBairro), grupo("Logradouro", cbLogradouro));
-        linhaEnd2.setAlignment(Pos.CENTER_LEFT);
-        HBox linhaEnd3 = new HBox(15, grupo("Número", tfNumero), grupo("Complemento", tfComplemento));
-        linhaEnd3.setAlignment(Pos.CENTER_LEFT);
+        // Endereço: Estado + Cidade (dropdowns) / Logradouro + CEP / Número + Complemento
+        HBox linhaEnd1 = linha(grupo("Estado", cbEstado), grupo("Cidade", cbCidade));
+        HBox linhaEnd2 = linha(grupo("Logradouro", tfLogradouro), grupo("CEP", tfCep));
+        HBox linhaEnd3 = linha(grupo("Número", tfNumero), grupo("Complemento (opcional)", tfComplemento));
 
         HBox[] linhasForm = {
             linhaDados1, linhaDados2, linhaDados3,
@@ -249,7 +209,6 @@ public class TelaCadastroEmpresa {
 
         ScaleTransition hoverIn  = escala(btnCadastrar, 1.00, 1.025, 150);
         ScaleTransition hoverOut = escala(btnCadastrar, 1.025, 1.00,  150);
-
         btnCadastrar.setOnMouseEntered(e -> { btnCadastrar.setStyle(estiloBotao(true));  hoverIn.play(); });
         btnCadastrar.setOnMouseExited(e ->  { btnCadastrar.setStyle(estiloBotao(false)); hoverOut.play(); });
         btnCadastrar.setOnAction(e -> handleCadastro());
@@ -293,20 +252,18 @@ public class TelaCadastroEmpresa {
         cardOuter.setTranslateY(28);
         cardOuter.setScaleX(0.96);
         cardOuter.setScaleY(0.96);
-
         new ParallelTransition(
             fade(cardOuter, 0, 1, 700),
             translY(cardOuter, 28, 0, 700),
             escala(cardOuter, 0.96, 1.0, 700)
         ).play();
 
-        // ── ANIMAÇÃO ESCALONADA DOS CAMPOS ────────────────────────────
         for (int i = 0; i < linhasForm.length; i++) {
-            HBox linha = linhasForm[i];
-            linha.setOpacity(0);
-            linha.setTranslateX(-18);
+            HBox lf = linhasForm[i];
+            lf.setOpacity(0);
+            lf.setTranslateX(-18);
             PauseTransition delay = new PauseTransition(Duration.millis(350 + i * 80));
-            final HBox flinha = linha;
+            final HBox flinha = lf;
             delay.setOnFinished(e ->
                 new ParallelTransition(
                     fade(flinha, 0, 1, 320),
@@ -319,7 +276,13 @@ public class TelaCadastroEmpresa {
         return new Scene(root, 1280, 720);
     }
 
-    // ── Criação de componentes ────────────────────────────────────────
+    // ── Helpers de layout ─────────────────────────────────────────────
+
+    private HBox linha(VBox... grupos) {
+        HBox h = new HBox(15, grupos);
+        h.setAlignment(Pos.CENTER_LEFT);
+        return h;
+    }
 
     private Circle criarOrb(double raio, String cor, double opacidade, double blur, double x, double y) {
         Circle c = new Circle(raio);
@@ -372,11 +335,8 @@ public class TelaCadastroEmpresa {
         cb.setMaxHeight(42);
         cb.setMaxWidth(Double.MAX_VALUE);
         cb.setStyle(estiloField(false));
-        cb.focusedProperty().addListener((obs, old, focused) -> {
-            cb.setStyle(estiloField(focused));
-        });
+        cb.focusedProperty().addListener((obs, old, focused) -> cb.setStyle(estiloField(focused)));
 
-        // CellFactory — itens da lista
         javafx.util.Callback<javafx.scene.control.ListView<T>, javafx.scene.control.ListCell<T>> cellFactory =
             lv -> new javafx.scene.control.ListCell<T>() {
                 @Override
@@ -392,10 +352,7 @@ public class TelaCadastroEmpresa {
                     }
                 }
             };
-
         cb.setCellFactory(cellFactory);
-
-        // ButtonCell — item visível com o combo fechado
         cb.setButtonCell(new javafx.scene.control.ListCell<T>() {
             @Override
             protected void updateItem(T item, boolean empty) {
@@ -411,7 +368,6 @@ public class TelaCadastroEmpresa {
                 }
             }
         });
-
         return cb;
     }
 
@@ -463,7 +419,7 @@ public class TelaCadastroEmpresa {
                shadow;
     }
 
-    // ── Helpers de animação ───────────────────────────────────────────
+    // ── Animações ─────────────────────────────────────────────────────
 
     private FadeTransition fade(Node n, double from, double to, int ms) {
         FadeTransition ft = new FadeTransition(Duration.millis(ms), n);
@@ -497,55 +453,30 @@ public class TelaCadastroEmpresa {
     // ── Validação ─────────────────────────────────────────────────────
 
     private boolean validarCampos() {
-        String nomeEmpresa  = tfNomeEmpresa.getText().trim();
-        String cnpj         = tfCnpj.getText().trim();
-        String razaoSocial  = tfRazaoSocial.getText().trim();
-        String nomeFantasia = tfNomeFantasia.getText().trim();
-        String inscricao    = tfInscricaoEstadual.getText().trim();
-        String email        = tfEmail.getText().trim();
-        String senha        = pfSenha.getText().trim();
-        String numStr       = tfNumero.getText().trim();
-        String comp         = tfComplemento.getText().trim();
+        if (tfNomeEmpresa.getText().trim().isEmpty())       { mostrarErro("Informe o nome da empresa.");            return false; }
+        if (tfNomeEmpresa.getText().trim().length() < 2)    { mostrarErro("Nome deve ter pelo menos 2 caracteres.");return false; }
+        if (tfCnpj.getText().trim().isEmpty())              { mostrarErro("Informe o CNPJ.");                       return false; }
+        if (tfRazaoSocial.getText().trim().isEmpty())       { mostrarErro("Informe a Razão Social.");               return false; }
+        if (tfNomeFantasia.getText().trim().isEmpty())      { mostrarErro("Informe o Nome Fantasia.");              return false; }
+        if (tfInscricaoEstadual.getText().trim().isEmpty()) { mostrarErro("Informe a Inscrição Estadual.");         return false; }
 
-        if (nomeEmpresa.isEmpty() || nomeEmpresa.length() < 2) {
-            mostrarErro(nomeEmpresa.isEmpty() ? "Informe o nome da empresa." : "Nome deve ter pelo menos 2 caracteres.");
-            return false;
-        }
-        if (cnpj.isEmpty()) {
-            mostrarErro("Informe o CNPJ.");
-            return false;
-        }
-        if (razaoSocial.isEmpty()) {
-            mostrarErro("Informe a Razão Social.");
-            return false;
-        }
-        if (nomeFantasia.isEmpty()) {
-            mostrarErro("Informe o Nome Fantasia.");
-            return false;
-        }
-        if (inscricao.isEmpty()) {
-            mostrarErro("Informe a Inscrição Estadual.");
-            return false;
-        }
+        String email = tfEmail.getText().trim();
         if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
-            mostrarErro(email.isEmpty() ? "Informe o e-mail." : "E-mail inválido.");
-            return false;
+            mostrarErro(email.isEmpty() ? "Informe o e-mail." : "E-mail inválido."); return false;
         }
+        String senha = pfSenha.getText().trim();
         if (senha.isEmpty() || senha.length() < 6) {
-            mostrarErro(senha.isEmpty() ? "Informe a senha." : "Senha deve ter pelo menos 6 caracteres.");
-            return false;
+            mostrarErro(senha.isEmpty() ? "Informe a senha." : "Senha deve ter pelo menos 6 caracteres."); return false;
         }
-        if (cbEstado.getValue() == null)    { mostrarErro("Selecione um estado.");     return false; }
-        if (cbCidade.getValue() == null)    { mostrarErro("Selecione uma cidade.");    return false; }
-        if (cbBairro.getValue() == null)    { mostrarErro("Selecione um bairro.");     return false; }
-        if (cbLogradouro.getValue() == null){ mostrarErro("Selecione um logradouro."); return false; }
+
+        if (cbEstado.getValue() == null) { mostrarErro("Selecione um estado.");  return false; }
+        if (cbCidade.getValue()  == null) { mostrarErro("Selecione uma cidade."); return false; }
+        if (tfLogradouro.getText().trim().isEmpty()) { mostrarErro("Informe o logradouro."); return false; }
+        if (tfCep.getText().trim().isEmpty())        { mostrarErro("Informe o CEP.");        return false; }
+
+        String numStr = tfNumero.getText().trim();
         if (numStr.isEmpty() || !numStr.matches("\\d+")) {
-            mostrarErro("Informe um número válido (apenas dígitos).");
-            return false;
-        }
-        if (comp.isEmpty()) {
-            mostrarErro("Informe um complemento do endereço.");
-            return false;
+            mostrarErro("Informe um número válido (apenas dígitos)."); return false;
         }
         return true;
     }
@@ -565,13 +496,14 @@ public class TelaCadastroEmpresa {
             tfEmail.getText().trim(),
             pfSenha.getText().trim()
         );
-
-        int numero        = Integer.parseInt(tfNumero.getText().trim());
-        String comp       = tfComplemento.getText().trim();
-        int idLogradouro  = cbLogradouro.getValue().getIdLogradouro();
+        emp.setLogradouro(tfLogradouro.getText().trim());
+        emp.setNumero(Integer.parseInt(tfNumero.getText().trim()));
+        emp.setComplemento(tfComplemento.getText().trim());
+        emp.setCep(tfCep.getText().trim());
+        emp.setIdCidade(cbCidade.getValue().getIdCidade());
 
         try {
-            new EmpresaController(emp).salvarComEndereco(comp, numero, idLogradouro);
+            new EmpresaController(emp).salvar();
             mostrarSucesso("Empresa cadastrada com sucesso!");
             limparCampos();
         } catch (IllegalArgumentException ex) {
@@ -600,11 +532,10 @@ public class TelaCadastroEmpresa {
         tfNomeEmpresa.clear(); tfCnpj.clear(); tfRazaoSocial.clear();
         tfNomeFantasia.clear(); tfInscricaoEstadual.clear();
         tfEmail.clear(); pfSenha.clear();
-        tfNumero.clear(); tfComplemento.clear();
+        tfLogradouro.clear(); tfNumero.clear();
+        tfComplemento.clear(); tfCep.clear();
         cbEstado.getSelectionModel().clearSelection();
-        cbCidade.getItems().clear();  cbCidade.setDisable(true);
-        cbBairro.getItems().clear();  cbBairro.setDisable(true);
-        cbLogradouro.getItems().clear(); cbLogradouro.setDisable(true);
+        cbCidade.getItems().clear(); cbCidade.setDisable(true);
     }
 
     // ── Loaders DB ─────────────────────────────────────────────────────
@@ -626,30 +557,6 @@ public class TelaCadastroEmpresa {
             Conexao.conectar();
             EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
             cbCidade.setItems(FXCollections.observableArrayList(dao.listarCidadesPorEstado(idEstado)));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            Conexao.desconectar();
-        }
-    }
-
-    private void carregarBairros(int idCidade) {
-        try {
-            Conexao.conectar();
-            EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
-            cbBairro.setItems(FXCollections.observableArrayList(dao.listarBairrosPorCidade(idCidade)));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            Conexao.desconectar();
-        }
-    }
-
-    private void carregarLogradouros(int idBairro) {
-        try {
-            Conexao.conectar();
-            EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
-            cbLogradouro.setItems(FXCollections.observableArrayList(dao.listarLogradourosPorBairro(idBairro)));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

@@ -11,10 +11,16 @@ public class Empresa {
     private String emailEmpresa;
     private String senhaEmpresa;
 
+    // ── Endereço flat ───────────────────────────────────────────────
+    private String logradouro;
+    private int    numero;
+    private String complemento;
+    private String cep;
+    private int    idCidade;
+
     public Empresa(String cnpj, String razaoSocial, String nomeFantasia,
                    String inscricaoEstadual, String nomeEmpresa,
                    String emailEmpresa, String senhaEmpresa) {
-        super();
         setCnpj(cnpj);
         setRazaoSocial(razaoSocial);
         setNomeFantasia(nomeFantasia);
@@ -24,63 +30,48 @@ public class Empresa {
         setSenhaEmpresa(senhaEmpresa);
     }
 
-    public Empresa() {
-        super();
-    }
+    public Empresa() {}
 
-    public int getIdEmpresa() { 
-    	return idEmpresa;
-    }
-    public void setIdEmpresa(int idEmpresa) {
-    	this.idEmpresa = idEmpresa;
-    }
+    // ── Getters / Setters básicos ───────────────────────────────────
 
-    public String getCnpj() {
-    	return cnpj;
-    }
-    public void setCnpj(String cnpj) {
-    	this.cnpj = cnpj;
-    }
+    public int    getIdEmpresa()                      { return idEmpresa; }
+    public void   setIdEmpresa(int idEmpresa)         { this.idEmpresa = idEmpresa; }
 
-    public String getRazaoSocial() {
-    	return razaoSocial;
-    }
-    public void setRazaoSocial(String razaoSocial) {
-    	this.razaoSocial = razaoSocial;
-    }
+    public String getCnpj()                           { return cnpj; }
+    public void   setCnpj(String cnpj)                { this.cnpj = cnpj; }
 
-    public String getNomeFantasia() {
-    	return nomeFantasia;
-    }
-    public void setNomeFantasia(String nomeFantasia) {
-    	this.nomeFantasia = nomeFantasia;
-    }
+    public String getRazaoSocial()                    { return razaoSocial; }
+    public void   setRazaoSocial(String r)            { this.razaoSocial = r; }
 
-    public String getInscricaoEstadual() {
-    	return inscricaoEstadual;
-    }
-    public void setInscricaoEstadual(String inscricaoEstadual) {
-    	this.inscricaoEstadual = inscricaoEstadual;
-    }
+    public String getNomeFantasia()                   { return nomeFantasia; }
+    public void   setNomeFantasia(String n)           { this.nomeFantasia = n; }
 
-    public String getNomeEmpresa() {
-    	return nomeEmpresa;
-    }
-    public void setNomeEmpresa(String nomeEmpresa) {
-    	this.nomeEmpresa = nomeEmpresa;
-    }
+    public String getInscricaoEstadual()              { return inscricaoEstadual; }
+    public void   setInscricaoEstadual(String i)      { this.inscricaoEstadual = i; }
 
-    public String getEmailEmpresa() {
-    	return emailEmpresa;
-    }
-    public void setEmailEmpresa(String emailEmpresa) {
-    	this.emailEmpresa = emailEmpresa;
-    }
+    public String getNomeEmpresa()                    { return nomeEmpresa; }
+    public void   setNomeEmpresa(String n)            { this.nomeEmpresa = n; }
 
-    public String getSenhaEmpresa() {
-    	return senhaEmpresa;
-    }
-    public void setSenhaEmpresa(String senhaEmpresa) {
-    	this.senhaEmpresa = senhaEmpresa;
-    }
+    public String getEmailEmpresa()                   { return emailEmpresa; }
+    public void   setEmailEmpresa(String e)           { this.emailEmpresa = e; }
+
+    public String getSenhaEmpresa()                   { return senhaEmpresa; }
+    public void   setSenhaEmpresa(String s)           { this.senhaEmpresa = s; }
+
+    // ── Getters / Setters de endereço ───────────────────────────────
+
+    public String getLogradouro()                     { return logradouro; }
+    public void   setLogradouro(String logradouro)    { this.logradouro = logradouro; }
+
+    public int    getNumero()                         { return numero; }
+    public void   setNumero(int numero)               { this.numero = numero; }
+
+    public String getComplemento()                    { return complemento; }
+    public void   setComplemento(String complemento)  { this.complemento = complemento; }
+
+    public String getCep()                            { return cep; }
+    public void   setCep(String cep)                  { this.cep = cep; }
+
+    public int    getIdCidade()                       { return idCidade; }
+    public void   setIdCidade(int idCidade)           { this.idCidade = idCidade; }
 }

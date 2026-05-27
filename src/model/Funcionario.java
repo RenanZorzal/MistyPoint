@@ -1,102 +1,73 @@
 package model;
 
 public class Funcionario {
-	private int    idFuncionario;
-	private String nome;
-	private String cpf;
-	private String cargo;
-	private String telefone;
-	private String email;
-	private String senha;
-	private int    idEndereco;
-	private int    idEmpresa;
-	
-	public Funcionario(String nome, String cpf, String cargo, String telefone, String email, String senha) {
-		super();
-		setNome(nome);
-		setCpf(cpf);
-		setCargo(cargo);
-		setTelefone(telefone);
-		setEmail(email);
-		setSenha(senha);
-	}
-	
-	public Funcionario() {
-		super();
-	}
+    private int    idFuncionario;
+    private String nome;
+    private String cpf;
+    private String cargo;
+    private String telefone;
+    private String email;
+    private String senha;
+    private int    idEmpresa;
 
-	public int getIdFuncionario() {
-		return idFuncionario;
-	}
+    // ── Endereço flat ───────────────────────────────────────────────
+    private String logradouro;
+    private int    numero;
+    private String complemento;
+    private String cep;
+    private int    idCidade;
 
-	public void setIdFuncionario(int idFuncionario) {
-		this.idFuncionario = idFuncionario;
-	}
-	
-	public String getNome() {
-		return nome;
-	}
+    public Funcionario(String nome, String cpf, String cargo, String telefone, String email, String senha) {
+        setNome(nome);
+        setCpf(cpf);
+        setCargo(cargo);
+        setTelefone(telefone);
+        setEmail(email);
+        setSenha(senha);
+    }
 
-	public void setNome(String nome) {
-		this.nome = nome;
-	}
+    public Funcionario() {}
 
-	public String getCpf() {
-		return cpf;
-	}
+    // ── Getters / Setters básicos ───────────────────────────────────
 
-	public void setCpf(String cpf) {
-		this.cpf = cpf;
-	}
+    public int    getIdFuncionario()              { return idFuncionario; }
+    public void   setIdFuncionario(int id)        { this.idFuncionario = id; }
 
-	public String getCargo() {
-		return cargo;
-	}
+    public String getNome()                       { return nome; }
+    public void   setNome(String nome)            { this.nome = nome; }
 
-	public void setCargo(String cargo) {
-		this.cargo = cargo;
-	}
+    public String getCpf()                        { return cpf; }
+    public void   setCpf(String cpf)              { this.cpf = cpf; }
 
-	public String getTelefone() {
-		return telefone;
-	}
+    public String getCargo()                      { return cargo; }
+    public void   setCargo(String cargo)          { this.cargo = cargo; }
 
-	public void setTelefone(String telefone) {
-		this.telefone = telefone;
-	}
+    public String getTelefone()                   { return telefone; }
+    public void   setTelefone(String telefone)    { this.telefone = telefone; }
 
-	public String getEmail() {
-		return email;
-	}
+    public String getEmail()                      { return email; }
+    public void   setEmail(String email)          { this.email = email; }
 
-	public void setEmail(String email) {
-		this.email = email;
-	}
+    public String getSenha()                      { return senha; }
+    public void   setSenha(String senha)          { this.senha = senha; }
 
-	public String getSenha() {
-		return senha;
-	}
+    public int    getIdEmpresa()                  { return idEmpresa; }
+    public void   setIdEmpresa(int idEmpresa)     { this.idEmpresa = idEmpresa; }
 
-	public void setSenha(String senha) {
-		this.senha = senha;
-	}
+    // ── Getters / Setters de endereço ───────────────────────────────
 
-	public int getIdEndereco() {
-		return idEndereco;
-	}
+    public String getLogradouro()                 { return logradouro; }
+    public void   setLogradouro(String logradouro){ this.logradouro = logradouro; }
 
-	public void setIdEndereco(int idEndereco) {
-		this.idEndereco = idEndereco;
-	}
+    public int    getNumero()                     { return numero; }
+    public void   setNumero(int numero)           { this.numero = numero; }
 
-	public int getIdEmpresa() {
-		return idEmpresa;
-	}
+    public String getComplemento()                { return complemento; }
+    public void   setComplemento(String comp)     { this.complemento = comp; }
 
-	public void setIdEmpresa(int idEmpresa) {
-		this.idEmpresa = idEmpresa;
-	}
+    public String getCep()                        { return cep; }
+    public void   setCep(String cep)              { this.cep = cep; }
 
-	
-	
+    public int    getIdCidade()                   { return idCidade; }
+    public void   setIdCidade(int idCidade)       { this.idCidade = idCidade; }
 }

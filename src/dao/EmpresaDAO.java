@@ -43,19 +43,27 @@ public class EmpresaDAO {
     }
 
     /**
-     * Insere a empresa e retorna o IDEMPRESA gerado.
+     * Insere a empresa (com endereço flat) e retorna o IDEMPRESA gerado.
      */
     public int inserir(Empresa empresa) throws SQLException {
-        String sql = "INSERT INTO empresa (cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
-                     "nomeempresa, emailempresa, senhaempresa) VALUES (?,?,?,?,?,?,?);";
+        String sql = "INSERT INTO empresa " +
+                     "(cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
+                     "nomeempresa, emailempresa, senhaempresa, " +
+                     "logradouro, numero, complemento, cep, idcidade) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, empresa.getCnpj());
-        stmt.setString(2, empresa.getRazaoSocial());
-        stmt.setString(3, empresa.getNomeFantasia());
-        stmt.setString(4, empresa.getInscricaoEstadual());
-        stmt.setString(5, empresa.getNomeEmpresa());
-        stmt.setString(6, empresa.getEmailEmpresa());
-        stmt.setString(7, empresa.getSenhaEmpresa());
+        stmt.setString(1,  empresa.getCnpj());
+        stmt.setString(2,  empresa.getRazaoSocial());
+        stmt.setString(3,  empresa.getNomeFantasia());
+        stmt.setString(4,  empresa.getInscricaoEstadual());
+        stmt.setString(5,  empresa.getNomeEmpresa());
+        stmt.setString(6,  empresa.getEmailEmpresa());
+        stmt.setString(7,  empresa.getSenhaEmpresa());
+        stmt.setString(8,  empresa.getLogradouro());
+        stmt.setInt(9,     empresa.getNumero());
+        stmt.setString(10, empresa.getComplemento() != null ? empresa.getComplemento() : "");
+        stmt.setString(11, empresa.getCep());
+        stmt.setInt(12,    empresa.getIdCidade());
         stmt.executeUpdate();
 
         int idGerado = -1;
@@ -66,22 +74,6 @@ public class EmpresaDAO {
         rs.close();
         stmt.close();
         return idGerado;
-    }
-
-    /**
-     * Insere o endereço da empresa na tabela ENDERECOEMPRESA.
-     */
-    public void inserirEnderecoEmpresa(String complemento, int numero,
-                                       int idLogradouro, int idEmpresa) throws SQLException {
-        String sql = "INSERT INTO enderecoempresa (complementoempresa, numeroempresa, idlogradouro, idempresa) " +
-                     "VALUES (?, ?, ?, ?)";
-        PreparedStatement stmt = conn.prepareStatement(sql);
-        stmt.setString(1, complemento);
-        stmt.setInt(2, numero);
-        stmt.setInt(3, idLogradouro);
-        stmt.setInt(4, idEmpresa);
-        stmt.executeUpdate();
-        stmt.close();
     }
 
     /** Retorna true se o e-mail e senha batem com um registro existente */
@@ -104,7 +96,8 @@ public class EmpresaDAO {
      */
     public Empresa autenticarRetornarEmpresa(String email, String senha) throws SQLException {
         String sql = "SELECT idempresa, cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
-                     "nomeempresa, emailempresa, senhaempresa " +
+                     "nomeempresa, emailempresa, senhaempresa, " +
+                     "logradouro, numero, complemento, cep, idcidade " +
                      "FROM empresa WHERE emailempresa = ? AND senhaempresa = ?";
         PreparedStatement stmt = conn.prepareStatement(sql);
         stmt.setString(1, email);
@@ -122,10 +115,14 @@ public class EmpresaDAO {
                 rs.getString("senhaempresa")
             );
             emp.setIdEmpresa(rs.getInt("idempresa"));
+            emp.setLogradouro(rs.getString("logradouro"));
+            emp.setNumero(rs.getInt("numero"));
+            emp.setComplemento(rs.getString("complemento"));
+            emp.setCep(rs.getString("cep"));
+            emp.setIdCidade(rs.getInt("idcidade"));
         }
         rs.close();
         stmt.close();
         return emp;
     }
 }
-

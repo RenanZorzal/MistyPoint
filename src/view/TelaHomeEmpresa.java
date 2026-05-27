@@ -14,8 +14,7 @@ import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
-import javafx.collections.transformation.SortedList;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -70,13 +69,17 @@ public class TelaHomeEmpresa {
     private TableView<FuncionarioRow> tvFuncionarios;
     private TableView<PontoRow>       tvPontos;
 
-    // Lista base e filtrada de funcionários
+    // Listas exibidas nas tabelas (populadas diretamente pelo banco)
     private ObservableList<FuncionarioRow> listaFuncionarios = FXCollections.observableArrayList();
-    private FilteredList<FuncionarioRow>   listaFiltrada;
+    private ObservableList<PontoRow>       listaPontos       = FXCollections.observableArrayList();
 
-    // Lista base e filtrada de pontos
-    private ObservableList<PontoRow> listaPontos = FXCollections.observableArrayList();
-    private FilteredList<PontoRow>   listaFiltradaPontos;
+    // Campos de filtro (referenciados para leitura em carregarDados)
+    private TextField tfFiltroNome;
+    private TextField tfFiltroCpf;
+    private TextField tfFiltroCargo;
+    private TextField tfFiltroFunc;
+    private TextField tfFiltroData;
+    private TextField tfFiltroHora;
 
     // Labels dos cartões de estatística
     private Label lblStatFunc;
@@ -303,7 +306,7 @@ public class TelaHomeEmpresa {
 
         Node cardFunc = criarCard("Total de Funcionários", lblStatFunc, PURPLE,    "#7D3DAA");
         Node cardHoje = criarCard("Pontos Hoje",           lblStatHoje, "#FF6B8A", "#CC3D5E");
-        Node cardMes  = criarCard("Pontos no Mês",         lblStatMes,  ORANGE,    "#CC6A2A");
+        Node cardMes  = criarCard("Horas no Mês",          lblStatMes,  ORANGE,    "#CC6A2A");
 
         HBox.setHgrow(cardFunc, Priority.ALWAYS);
         HBox.setHgrow(cardHoje, Priority.ALWAYS);
@@ -338,9 +341,9 @@ public class TelaHomeEmpresa {
         titulo.setTextFill(Color.WHITE);
 
         // ── Barra de filtros ─────────────────────────────────────────
-        TextField tfFiltroNome  = criarCampoFiltro("🔍  Buscar por nome...");
-        TextField tfFiltroCpf   = criarCampoFiltro("🔍  Buscar por CPF...");
-        TextField tfFiltroCargo = criarCampoFiltro("🔍  Buscar por cargo...");
+        tfFiltroNome  = criarCampoFiltro("🔍  Buscar por nome...");
+        tfFiltroCpf   = criarCampoFiltro("🔍  Buscar por CPF...");
+        tfFiltroCargo = criarCampoFiltro("🔍  Buscar por cargo...");
 
         HBox filtrosBox = new HBox(12, tfFiltroNome, tfFiltroCpf, tfFiltroCargo);
         filtrosBox.setAlignment(Pos.CENTER_LEFT);
@@ -348,24 +351,10 @@ public class TelaHomeEmpresa {
         HBox.setHgrow(tfFiltroCpf,   Priority.ALWAYS);
         HBox.setHgrow(tfFiltroCargo, Priority.ALWAYS);
 
-        // ── Inicializa FilteredList ───────────────────────────────────
-        listaFiltrada = new FilteredList<>(listaFuncionarios, p -> true);
-
-        Runnable aplicarFiltro = () -> {
-            String nome  = tfFiltroNome.getText().trim().toLowerCase();
-            String cpf   = tfFiltroCpf.getText().trim().toLowerCase();
-            String cargo = tfFiltroCargo.getText().trim().toLowerCase();
-            listaFiltrada.setPredicate(row -> {
-                boolean okNome  = nome.isEmpty()  || row.getNome().toLowerCase().contains(nome);
-                boolean okCpf   = cpf.isEmpty()   || row.getCpf().toLowerCase().contains(cpf);
-                boolean okCargo = cargo.isEmpty()  || row.getCargo().toLowerCase().contains(cargo);
-                return okNome && okCpf && okCargo;
-            });
-        };
-
-        tfFiltroNome.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
-        tfFiltroCpf.textProperty().addListener((o, ov, nv)  -> aplicarFiltro.run());
-        tfFiltroCargo.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+        // ── Filtro via SQL: re-consulta o banco a cada alteração ──────
+        tfFiltroNome.textProperty().addListener((o, ov, nv)  -> carregarFuncionariosFiltrados());
+        tfFiltroCpf.textProperty().addListener((o, ov, nv)   -> carregarFuncionariosFiltrados());
+        tfFiltroCargo.textProperty().addListener((o, ov, nv)  -> carregarFuncionariosFiltrados());
 
         // ── Tabela ───────────────────────────────────────────────────
         tvFuncionarios = new TableView<>();
@@ -374,8 +363,7 @@ public class TelaHomeEmpresa {
         VBox.setVgrow(tvFuncionarios, Priority.ALWAYS);
         tvFuncionarios.setPlaceholder(criarPlaceholder("Nenhum funcionário encontrado."));
 
-        SortedList<FuncionarioRow> listaOrdenada = new SortedList<>(listaFiltrada);
-        tvFuncionarios.setItems(listaOrdenada);
+        tvFuncionarios.setItems(listaFuncionarios);
 
         TableColumn<FuncionarioRow, String> colNome  = new TableColumn<>("Nome");
         colNome.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getNome()));
@@ -474,9 +462,9 @@ public class TelaHomeEmpresa {
         titulo.setTextFill(Color.WHITE);
 
         // ── Barra de filtros ─────────────────────────────────────────
-        TextField tfFiltroFunc = criarCampoFiltro("🔍  Buscar por funcionário...");
-        TextField tfFiltroData = criarCampoFiltro("🔍  Buscar por data...");
-        TextField tfFiltroHora = criarCampoFiltro("🔍  Buscar por horário...");
+        tfFiltroFunc = criarCampoFiltro("🔍  Buscar por funcionário...");
+        tfFiltroData = criarCampoFiltro("🔍  Buscar por data...");
+        tfFiltroHora = criarCampoFiltro("🔍  Buscar por horário...");
 
         HBox filtrosBox = new HBox(12, tfFiltroFunc, tfFiltroData, tfFiltroHora);
         filtrosBox.setAlignment(Pos.CENTER_LEFT);
@@ -484,24 +472,10 @@ public class TelaHomeEmpresa {
         HBox.setHgrow(tfFiltroData, Priority.ALWAYS);
         HBox.setHgrow(tfFiltroHora, Priority.ALWAYS);
 
-        // ── Inicializa FilteredList ───────────────────────────────────
-        listaFiltradaPontos = new FilteredList<>(listaPontos, p -> true);
-
-        Runnable aplicarFiltro = () -> {
-            String func = tfFiltroFunc.getText().trim().toLowerCase();
-            String data = tfFiltroData.getText().trim().toLowerCase();
-            String hora = tfFiltroHora.getText().trim().toLowerCase();
-            listaFiltradaPontos.setPredicate(row -> {
-                boolean okFunc = func.isEmpty() || row.getNomeFuncionario().toLowerCase().contains(func);
-                boolean okData = data.isEmpty() || row.getDataPonto().toLowerCase().contains(data);
-                boolean okHora = hora.isEmpty() || row.getHorario().toLowerCase().contains(hora);
-                return okFunc && okData && okHora;
-            });
-        };
-
-        tfFiltroFunc.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
-        tfFiltroData.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
-        tfFiltroHora.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+        // ── Filtro via SQL: re-consulta o banco a cada alteração ──────
+        tfFiltroFunc.textProperty().addListener((o, ov, nv) -> carregarPontosFiltrados());
+        tfFiltroData.textProperty().addListener((o, ov, nv) -> carregarPontosFiltrados());
+        tfFiltroHora.textProperty().addListener((o, ov, nv) -> carregarPontosFiltrados());
 
         // ── Tabela ───────────────────────────────────────────────────
         tvPontos = new TableView<>();
@@ -510,8 +484,7 @@ public class TelaHomeEmpresa {
         VBox.setVgrow(tvPontos, Priority.ALWAYS);
         tvPontos.setPlaceholder(criarPlaceholder("Nenhum ponto encontrado."));
 
-        SortedList<PontoRow> listaOrdenadaPontos = new SortedList<>(listaFiltradaPontos);
-        tvPontos.setItems(listaOrdenadaPontos);
+        tvPontos.setItems(listaPontos);
 
         TableColumn<PontoRow, String> colFunc = new TableColumn<>("Funcionário");
         colFunc.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getNomeFuncionario()));
@@ -523,12 +496,71 @@ public class TelaHomeEmpresa {
         colData.setPrefWidth(140);
         colData.setSortable(false);
 
-        TableColumn<PontoRow, String> colHora = new TableColumn<>("Horário");
-        colHora.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getHorario()));
-        colHora.setPrefWidth(120);
-        colHora.setSortable(false);
+        TableColumn<PontoRow, String> colEntrada = new TableColumn<>("Entrada");
+        colEntrada.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getHorario()));
+        colEntrada.setPrefWidth(100);
+        colEntrada.setSortable(false);
 
-        tvPontos.getColumns().addAll(colFunc, colData, colHora);
+        TableColumn<PontoRow, String> colSaida = new TableColumn<>("Saída");
+        colSaida.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getHorarioFechamento()));
+        colSaida.setPrefWidth(100);
+        colSaida.setSortable(false);
+
+        TableColumn<PontoRow, String> colTotal = new TableColumn<>("Total");
+        colTotal.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getTotalHoras()));
+        colTotal.setPrefWidth(90);
+        colTotal.setSortable(false);
+
+        TableColumn<PontoRow, String> colStatus = new TableColumn<>("Status");
+        colStatus.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getStatus()));
+        colStatus.setPrefWidth(120);
+        colStatus.setSortable(false);
+        colStatus.setCellFactory(col -> new TableCell<PontoRow, String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    Label lbl = new Label(item);
+                    lbl.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 11));
+                    if (item.equals("ABERTO")) {
+                        lbl.setStyle("-fx-background-color: rgba(255,142,83,0.2); -fx-text-fill: #FF8E53; -fx-padding: 3 8 3 8; -fx-background-radius: 6;");
+                    } else {
+                        lbl.setStyle("-fx-background-color: rgba(52,199,89,0.2); -fx-text-fill: #34C759; -fx-padding: 3 8 3 8; -fx-background-radius: 6;");
+                    }
+                    setGraphic(lbl);
+                    setText(null);
+                }
+            }
+        });
+
+        TableColumn<PontoRow, Void> colAcoesPontos = new TableColumn<>("Ações");
+        colAcoesPontos.setSortable(false);
+        colAcoesPontos.setPrefWidth(90);
+        colAcoesPontos.setCellFactory(col -> new TableCell<PontoRow, Void>() {
+            @Override
+            protected void updateItem(Void item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty) {
+                    setGraphic(null);
+                } else {
+                    HBox box = new HBox();
+                    box.setAlignment(Pos.CENTER);
+                    Button btnEditar = new Button("✎");
+                    btnEditar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 14));
+                    btnEditar.setStyle("-fx-background-color: transparent; -fx-text-fill: #FF8E53; -fx-cursor: hand;");
+                    btnEditar.setOnMouseEntered(e -> escala(btnEditar, 1.0, 1.2, 100).play());
+                    btnEditar.setOnMouseExited (e -> escala(btnEditar, 1.2, 1.0, 100).play());
+                    btnEditar.setOnAction(e -> abrirModalEdicaoPonto(getTableView().getItems().get(getIndex())));
+                    box.getChildren().add(btnEditar);
+                    setGraphic(box);
+                }
+            }
+        });
+
+        tvPontos.getColumns().addAll(colFunc, colData, colEntrada, colSaida, colTotal, colStatus, colAcoesPontos);
 
         painel.getChildren().addAll(titulo, filtrosBox, tvPontos);
         return painel;
@@ -545,22 +577,56 @@ public class TelaHomeEmpresa {
             // Estatísticas
             int totalFunc  = homeDAO.contarFuncionarios(idEmpresa);
             int pontosHoje = homeDAO.contarPontosHoje(idEmpresa);
-            int pontosMes  = homeDAO.contarPontosMes(idEmpresa);
+            String horasMes  = homeDAO.somarHorasMes(idEmpresa);
 
             lblStatFunc.setText(String.valueOf(totalFunc));
             lblStatHoje.setText(String.valueOf(pontosHoje));
-            lblStatMes.setText(String.valueOf(pontosMes));
+            lblStatMes.setText(horasMes);
 
-            // Funcionários
-            List<FuncionarioRow> funcionarios = homeDAO.listarFuncionarios(idEmpresa);
-            listaFuncionarios.setAll(funcionarios);
-            if (listaFiltrada != null) listaFiltrada.setPredicate(listaFiltrada.getPredicate());
+            // Funcionários (respeitando filtros atuais dos campos)
+            String nome  = tfFiltroNome  != null ? tfFiltroNome.getText().trim()  : "";
+            String cpf   = tfFiltroCpf   != null ? tfFiltroCpf.getText().trim()   : "";
+            String cargo = tfFiltroCargo != null ? tfFiltroCargo.getText().trim()  : "";
+            listaFuncionarios.setAll(homeDAO.listarFuncionariosFiltrados(idEmpresa, nome, cpf, cargo));
 
-            // Pontos
-            List<PontoRow> pontos = homeDAO.listarPontos(idEmpresa);
-            listaPontos.setAll(pontos);
-            if (listaFiltradaPontos != null) listaFiltradaPontos.setPredicate(listaFiltradaPontos.getPredicate());
+            // Pontos (respeitando filtros atuais dos campos)
+            String func = tfFiltroFunc != null ? tfFiltroFunc.getText().trim() : "";
+            String data = tfFiltroData != null ? tfFiltroData.getText().trim() : "";
+            String hora = tfFiltroHora != null ? tfFiltroHora.getText().trim() : "";
+            listaPontos.setAll(homeDAO.listarPontosFiltrados(idEmpresa, func, data, hora));
 
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            Conexao.desconectar();
+        }
+    }
+
+    /** Re-consulta o banco com os filtros atuais de funcionários. */
+    private void carregarFuncionariosFiltrados() {
+        try {
+            Conexao.conectar();
+            HomeEmpresaDAO dao = new HomeEmpresaDAO(Conexao.conexao);
+            String nome  = tfFiltroNome.getText().trim();
+            String cpf   = tfFiltroCpf.getText().trim();
+            String cargo = tfFiltroCargo.getText().trim();
+            listaFuncionarios.setAll(dao.listarFuncionariosFiltrados(idEmpresa, nome, cpf, cargo));
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        } finally {
+            Conexao.desconectar();
+        }
+    }
+
+    /** Re-consulta o banco com os filtros atuais de pontos. */
+    private void carregarPontosFiltrados() {
+        try {
+            Conexao.conectar();
+            HomeEmpresaDAO dao = new HomeEmpresaDAO(Conexao.conexao);
+            String func = tfFiltroFunc.getText().trim();
+            String data = tfFiltroData.getText().trim();
+            String hora = tfFiltroHora.getText().trim();
+            listaPontos.setAll(dao.listarPontosFiltrados(idEmpresa, func, data, hora));
         } catch (Exception ex) {
             ex.printStackTrace();
         } finally {
@@ -746,6 +812,190 @@ public class TelaHomeEmpresa {
     }
 
     // ──────────────────────────────────────────────────────────────────
+    //  MODAL DE EDIÇÃO DE PONTO
+    // ──────────────────────────────────────────────────────────────────
+    private void abrirModalEdicaoPonto(PontoRow row) {
+        StackPane overlay = new StackPane();
+        overlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
+
+        StackPane cardOuter = new StackPane();
+        cardOuter.setMaxWidth(480);
+        cardOuter.setMaxHeight(javafx.scene.layout.Region.USE_PREF_SIZE);
+        cardOuter.setStyle(
+            "-fx-background-color: linear-gradient(to bottom right, #FF6B8A, #FF8E53);" +
+            "-fx-background-radius: 22; -fx-padding: 1.5;"
+        );
+        DropShadow glow = new DropShadow(40, Color.web("#FF6B8A", 0.5));
+        glow.setSpread(0.05);
+        cardOuter.setEffect(glow);
+
+        VBox card = new VBox(18);
+        card.setPadding(new Insets(32, 36, 32, 36));
+        card.setStyle("-fx-background-color: #0F081E; -fx-background-radius: 21;");
+
+        Label lblTitulo = new Label("Editar Ponto");
+        lblTitulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 20));
+        lblTitulo.setTextFill(Color.WHITE);
+
+        Region gradLine = new Region();
+        gradLine.setPrefHeight(2);
+        gradLine.setStyle("-fx-background-color: linear-gradient(to right, #FF6B8A, #FF8E53);");
+        VBox.setMargin(gradLine, new Insets(0, 0, 4, 0));
+
+        VBox form = new VBox(12);
+
+        TextField tfData = criarCampoEdicao(row.getDataPonto());
+        tfData.setPromptText("Data (dd/MM/yyyy)");
+        TextField tfEntrada = criarCampoEdicao(row.getHorario());
+        tfEntrada.setPromptText("Entrada (HH:mm)");
+        TextField tfSaida = criarCampoEdicao(row.getHorarioFechamento().equals("--:--") ? "" : row.getHorarioFechamento());
+        tfSaida.setPromptText("Saída (HH:mm)");
+
+        javafx.scene.control.ComboBox<String> cbStatus = new javafx.scene.control.ComboBox<>();
+        if ("FECHADO".equals(row.getStatus())) {
+            cbStatus.getItems().add("FECHADO");
+            cbStatus.setValue("FECHADO");
+            cbStatus.setDisable(true);
+        } else {
+            cbStatus.getItems().addAll("ABERTO", "FECHADO");
+            cbStatus.setValue("ABERTO");
+        }
+        cbStatus.setMaxWidth(Double.MAX_VALUE);
+        cbStatus.setPrefHeight(35);
+        cbStatus.setStyle(
+            "-fx-background-color: #140A28; " +
+            "-fx-border-color: #1E1035; " +
+            "-fx-border-radius: 8; " +
+            "-fx-background-radius: 8; " +
+            "-fx-opacity: 1.0;"
+        );
+
+        javafx.util.Callback<javafx.scene.control.ListView<String>, javafx.scene.control.ListCell<String>> cellFactory =
+            lv -> new javafx.scene.control.ListCell<String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                        setStyle("-fx-background-color: #140A28;");
+                    } else {
+                        setText(item);
+                        setStyle("-fx-text-fill: white; -fx-background-color: #140A28; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 13px;");
+                    }
+                }
+            };
+        cbStatus.setCellFactory(cellFactory);
+        cbStatus.setButtonCell(new javafx.scene.control.ListCell<String>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText("");
+                    setStyle("-fx-text-fill: white; -fx-background-color: transparent; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 13px;");
+                } else {
+                    setText(item);
+                    setStyle("-fx-text-fill: white; -fx-background-color: transparent; -fx-font-family: 'Helvetica Neue'; -fx-font-size: 13px;");
+                }
+            }
+        });
+
+        form.getChildren().addAll(
+            new Label("Data:"), tfData,
+            new Label("Entrada:"), tfEntrada,
+            new Label("Saída:"), tfSaida,
+            new Label("Status:"), cbStatus
+        );
+
+        for (javafx.scene.Node n : form.getChildren()) {
+            if (n instanceof Label) {
+                ((Label) n).setTextFill(Color.web(TEXT_SEC));
+                ((Label) n).setFont(Font.font("Helvetica Neue", 12));
+                VBox.setMargin(n, new Insets(0, 0, -6, 0));
+            }
+        }
+
+        Label lblErro = new Label();
+        lblErro.setFont(Font.font("Helvetica Neue", 13));
+        lblErro.setTextFill(Color.web("#FF3B5C"));
+        lblErro.setWrapText(true);
+        lblErro.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblErro.setVisible(false);
+        lblErro.setManaged(false);
+
+        HBox botoes = new HBox(12);
+        botoes.setAlignment(Pos.CENTER_RIGHT);
+        VBox.setMargin(botoes, new Insets(10, 0, 0, 0));
+
+        Runnable fechar = () -> {
+            FadeTransition ftOut = fade(overlay, 1, 0, 180);
+            ftOut.setOnFinished(ev -> rootPane.getChildren().remove(overlay));
+            ftOut.play();
+        };
+
+        Button btnCancelar = new Button("Cancelar");
+        btnCancelar.setPrefHeight(38);
+        btnCancelar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 13));
+        btnCancelar.setStyle("-fx-background-color: transparent; -fx-text-fill: " + TEXT_SEC + "; -fx-cursor: hand;");
+        btnCancelar.setOnAction(e -> fechar.run());
+
+        Button btnSalvar = new Button("Salvar");
+        btnSalvar.setPrefHeight(38);
+        btnSalvar.setPrefWidth(120);
+        btnSalvar.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 13));
+        btnSalvar.setStyle(
+            "-fx-background-color: linear-gradient(to right, #FF6B8A, #FF8E53);" +
+            "-fx-background-radius: 10; -fx-text-fill: white; -fx-cursor: hand; -fx-padding: 0 18 0 18;"
+        );
+        btnSalvar.setOnMouseEntered(e -> escala(btnSalvar, 1.0, 1.05, 120).play());
+        btnSalvar.setOnMouseExited (e -> escala(btnSalvar, 1.05, 1.0, 120).play());
+        btnSalvar.setOnAction(e -> {
+            String status = cbStatus.getValue();
+            String saida = tfSaida.getText().trim();
+            if ("FECHADO".equals(status) && (saida.isEmpty() || saida.equals("--:--"))) {
+                lblErro.setText("⚠ Para fechar o ponto, o horário de saída é obrigatório.");
+                lblErro.setVisible(true);
+                lblErro.setManaged(true);
+                TranslateTransition shake = new TranslateTransition(Duration.millis(55), lblErro);
+                shake.setFromX(-7); shake.setToX(7);
+                shake.setCycleCount(5); shake.setAutoReverse(true);
+                shake.play();
+                return;
+            }
+            try {
+                Conexao.conectar();
+                HomeEmpresaDAO dao = new HomeEmpresaDAO(Conexao.conexao);
+                dao.atualizarPonto(row.getId(), tfData.getText().trim(), tfEntrada.getText().trim(), saida, status);
+                Conexao.desconectar();
+                fechar.run();
+                carregarDados();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                lblErro.setText("⚠ Erro ao salvar: " + ex.getMessage());
+                lblErro.setVisible(true);
+                lblErro.setManaged(true);
+            }
+        });
+
+        botoes.getChildren().addAll(btnCancelar, btnSalvar);
+        card.getChildren().addAll(lblTitulo, gradLine, form, lblErro, botoes);
+        cardOuter.getChildren().add(card);
+        overlay.getChildren().add(cardOuter);
+        StackPane.setAlignment(cardOuter, Pos.CENTER);
+        StackPane.setMargin(cardOuter, new Insets(20));
+        rootPane.getChildren().add(overlay);
+
+        overlay.setOpacity(0);
+        cardOuter.setScaleX(0.92);
+        cardOuter.setScaleY(0.92);
+        ScaleTransition stEdit = new ScaleTransition(Duration.millis(250), cardOuter);
+        stEdit.setFromX(0.92); stEdit.setFromY(0.92);
+        stEdit.setToX(1.0);   stEdit.setToY(1.0);
+        stEdit.setInterpolator(Interpolator.EASE_OUT);
+        new ParallelTransition(fade(overlay, 0, 1, 250), stEdit).play();
+    }
+
+    // ──────────────────────────────────────────────────────────────────
     //  MODAL DE EDIÇÃO DE FUNCIONÁRIO
     // ──────────────────────────────────────────────────────────────────
     private void abrirModalEdicao(FuncionarioRow row) {
@@ -793,6 +1043,7 @@ public class TelaHomeEmpresa {
         TextField tfNome     = criarCampoEdicao(row.getNome());
         TextField tfCargo    = criarCampoEdicao(row.getCargo());
         TextField tfTelefone = criarCampoEdicao(row.getTelefone());
+        MaskUtils.applyTelefoneMask(tfTelefone);
         TextField tfEmail    = criarCampoEdicao(row.getEmail());
 
         form.add(criarLabel("Nome"),     0, 0); form.add(tfNome,     1, 0);
@@ -935,6 +1186,15 @@ public class TelaHomeEmpresa {
         aviso.setTextFill(Color.web("#FF3B5C", 0.8));
         VBox.setMargin(aviso, new Insets(0, 0, 8, 0));
 
+        Label lblErroExclusao = new Label();
+        lblErroExclusao.setFont(Font.font("Helvetica Neue", 13));
+        lblErroExclusao.setTextFill(Color.web("#FF3B5C"));
+        lblErroExclusao.setWrapText(true);
+        lblErroExclusao.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+        lblErroExclusao.setVisible(false);
+        lblErroExclusao.setManaged(false);
+        VBox.setMargin(lblErroExclusao, new Insets(8, 0, 8, 0));
+
         HBox botoes = new HBox(12);
         botoes.setAlignment(Pos.CENTER);
 
@@ -971,18 +1231,31 @@ public class TelaHomeEmpresa {
             try {
                 Conexao.conectar();
                 FuncionarioDAO dao = new FuncionarioDAO(Conexao.conexao);
+                if (dao.possuiPontos(row.getId())) {
+                    Conexao.desconectar();
+                    lblErroExclusao.setText("⚠ Não é possível excluir um funcionário que já possui pontos registrados.");
+                    lblErroExclusao.setVisible(true);
+                    lblErroExclusao.setManaged(true);
+                    TranslateTransition shake = new TranslateTransition(Duration.millis(55), lblErroExclusao);
+                    shake.setFromX(-7); shake.setToX(7);
+                    shake.setCycleCount(5); shake.setAutoReverse(true);
+                    shake.play();
+                    return;
+                }
                 dao.excluir(row.getId());
                 Conexao.desconectar();
                 fechar.run();
                 carregarDados();
             } catch (Exception ex) {
                 ex.printStackTrace();
-                mostrarAlertaErro("Erro ao excluir: " + ex.getMessage());
+                lblErroExclusao.setText("⚠ Erro ao excluir: " + ex.getMessage());
+                lblErroExclusao.setVisible(true);
+                lblErroExclusao.setManaged(true);
             }
         });
 
         botoes.getChildren().addAll(btnCancelar, btnExcluir);
-        card.getChildren().addAll(icone, msg, detalhe, aviso, botoes);
+        card.getChildren().addAll(icone, msg, detalhe, aviso, lblErroExclusao, botoes);
         cardOuter.getChildren().add(card);
 
         overlay.getChildren().add(cardOuter);

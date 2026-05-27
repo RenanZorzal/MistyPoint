@@ -1,7 +1,6 @@
 package controller;
 
 import dao.EmpresaDAO;
-import dao.EnderecoDAO;
 import model.Conexao;
 import model.Empresa;
 
@@ -11,22 +10,16 @@ public class EmpresaController {
     private Empresa empresa;
 
     public EmpresaController(Empresa empresa) {
-        super();
         this.empresa = empresa;
     }
 
     /**
-     * Salva a empresa e seu endereço no banco após verificar duplicatas de CNPJ e e-mail.
-     * A tabela ENDERECOEMPRESA tem FK para EMPRESA, portanto insere a empresa primeiro,
-     * obtém o ID gerado e usa-o para inserir em ENDERECOEMPRESA.
+     * Valida unicidade de CNPJ/e-mail e insere a empresa (com endereço flat já preenchido no objeto).
      *
-     * @param complemento  complemento do endereço da empresa
-     * @param numero       número do imóvel
-     * @param idLogradouro ID do logradouro selecionado
      * @throws IllegalArgumentException se CNPJ ou e-mail já estiverem cadastrados
      * @throws Exception                se ocorrer erro de banco de dados
      */
-    public void salvarComEndereco(String complemento, int numero, int idLogradouro) throws Exception {
+    public void salvar() throws Exception {
         Conexao.conectar();
         try {
             dao = new EmpresaDAO(Conexao.conexao);
@@ -42,9 +35,7 @@ public class EmpresaController {
             if (idEmpresa <= 0) {
                 throw new Exception("Falha ao registrar empresa no banco de dados.");
             }
-
             empresa.setIdEmpresa(idEmpresa);
-            dao.inserirEnderecoEmpresa(complemento, numero, idLogradouro, idEmpresa);
         } finally {
             Conexao.desconectar();
         }

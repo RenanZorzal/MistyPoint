@@ -73,6 +73,10 @@ public class TelaHomeFuncionario {
     private Label lblRelogio;
     private Timeline clockTimeline;
 
+    // Botão principal e estado do ponto aberto
+    private Button     btnBaterPonto;
+    private PontoRow   pontoAbertoAtual = null;
+
     public TelaHomeFuncionario(Funcionario funcionario) {
         this.funcionario = funcionario;
     }
@@ -250,8 +254,8 @@ public class TelaHomeFuncionario {
         Region sp = new Region();
         HBox.setHgrow(sp, Priority.ALWAYS);
 
-        // ── Botão BATER PONTO ──────────────────────────────────────
-        Button btnBaterPonto = new Button("⏱  Bater Ponto");
+        // ── Botão BATER / FECHAR PONTO ────────────────────────────
+        btnBaterPonto = new Button("⏱  Bater Ponto");
         btnBaterPonto.setPrefHeight(46);
         btnBaterPonto.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 14));
         btnBaterPonto.setStyle(
@@ -264,7 +268,7 @@ public class TelaHomeFuncionario {
         );
         btnBaterPonto.setOnMouseEntered(e -> escala(btnBaterPonto, 1.0, 1.05, 120).play());
         btnBaterPonto.setOnMouseExited(e  -> escala(btnBaterPonto, 1.05, 1.0, 120).play());
-        btnBaterPonto.setOnAction(e -> baterPonto());
+        btnBaterPonto.setOnAction(e -> acaoPonto());
 
         topbar.getChildren().addAll(tituloBox, sp, btnBaterPonto);
 
@@ -277,7 +281,7 @@ public class TelaHomeFuncionario {
         lblUltimoPonto = new Label("–");
 
         Node cardHoje   = criarCard("Pontos Hoje",     lblStatHoje,    PINK,   "#CC3D5E");
-        Node cardMes    = criarCard("Pontos no Mês",   lblStatMes,     ORANGE, "#CC6A2A");
+        Node cardMes    = criarCard("Horas no Mês",    lblStatMes,     ORANGE, "#CC6A2A");
         Node cardUltimo = criarCard("Último Registro", lblUltimoPonto, PURPLE, "#7D3DAA");
 
         HBox.setHgrow(cardHoje,   Priority.ALWAYS);
@@ -306,28 +310,46 @@ public class TelaHomeFuncionario {
         TableColumn<PontoRow, String> colData = new TableColumn<>("Data");
         colData.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
                 formatarData(d.getValue().getData())));
-        colData.setPrefWidth(180);
+        colData.setPrefWidth(160);
 
-        TableColumn<PontoRow, String> colHorario = new TableColumn<>("Horário");
-        colHorario.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
+        TableColumn<PontoRow, String> colEntrada = new TableColumn<>("Entrada");
+        colEntrada.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
                 d.getValue().getHorario()));
-        colHorario.setPrefWidth(120);
+        colEntrada.setPrefWidth(100);
 
-        // Coluna de status com badge colorido
+        TableColumn<PontoRow, String> colSaida = new TableColumn<>("Saída");
+        colSaida.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
+                d.getValue().getHorarioFechamento().isBlank() ? "–" : d.getValue().getHorarioFechamento()));
+        colSaida.setPrefWidth(100);
+
+        TableColumn<PontoRow, String> colTotal = new TableColumn<>("Total");
+        colTotal.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(
+                d.getValue().getTotalHoras()));
+        colTotal.setPrefWidth(100);
+
+        // Coluna de status com badge colorido (ABERTO = amarelo, FECHADO = verde)
         TableColumn<PontoRow, String> colStatus = new TableColumn<>("Status");
         colStatus.setSortable(false);
         colStatus.setCellFactory(col -> new TableCell<PontoRow, String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) { setGraphic(null); return; }
-                Label badge = new Label("✓  Registrado");
+                if (empty || getIndex() >= getTableView().getItems().size()) {
+                    setGraphic(null);
+                    return;
+                }
+                PontoRow row = getTableView().getItems().get(getIndex());
+                boolean aberto = row.isAberto();
+                String cor    = aberto ? "#FFD60A" : GREEN;
+                String corBg  = aberto ? "rgba(255,214,10,0.15)" : "rgba(52,199,89,0.18)";
+                String texto  = aberto ? "⏳  Em aberto" : "✓  Fechado";
+                Label badge = new Label(texto);
                 badge.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 11));
                 badge.setStyle(
-                    "-fx-background-color: rgba(52,199,89,0.18);" +
-                    "-fx-border-color: " + GREEN + ";" +
+                    "-fx-background-color: " + corBg + ";" +
+                    "-fx-border-color: " + cor + ";" +
                     "-fx-border-radius: 6; -fx-background-radius: 6;" +
-                    "-fx-text-fill: " + GREEN + ";" +
+                    "-fx-text-fill: " + cor + ";" +
                     "-fx-padding: 3 10 3 10;"
                 );
                 setGraphic(badge);
@@ -335,7 +357,7 @@ public class TelaHomeFuncionario {
             }
         });
 
-        tvPontos.getColumns().addAll(colData, colHorario, colStatus);
+        tvPontos.getColumns().addAll(colData, colEntrada, colSaida, colTotal, colStatus);
 
         tabelaBox.getChildren().addAll(tituloTabela, tvPontos);
 
@@ -344,39 +366,95 @@ public class TelaHomeFuncionario {
     }
 
     // ──────────────────────────────────────────────────────────────────
-    //  BATER PONTO
+    //  AÇÃO DO BOTÃO (bater ou fechar ponto)
     // ──────────────────────────────────────────────────────────────────
+    private void acaoPonto() {
+        if (pontoAbertoAtual != null) {
+            fecharPonto();
+        } else {
+            baterPonto();
+        }
+    }
+
     private void baterPonto() {
         try {
             Conexao.conectar();
             PontoDAO dao = new PontoDAO(Conexao.conexao);
-            dao.registrarPonto(funcionario.getIdFuncionario(), funcionario.getIdEndereco());
+            dao.registrarPonto(funcionario.getIdFuncionario());
             Conexao.desconectar();
-            mostrarConfirmacaoPonto();
             carregarDados();
+            mostrarConfirmacaoPonto(false);
+        } catch (IllegalStateException ex) {
+            mostrarErroPonto(ex.getMessage());
         } catch (Exception ex) {
             ex.printStackTrace();
             mostrarErroPonto("Erro ao registrar ponto: " + ex.getMessage());
         }
     }
 
+    private void fecharPonto() {
+        try {
+            Conexao.conectar();
+            PontoDAO dao = new PontoDAO(Conexao.conexao);
+            dao.fecharPonto(pontoAbertoAtual.getId(), funcionario.getIdFuncionario());
+            Conexao.desconectar();
+            carregarDados();
+            mostrarConfirmacaoPonto(true);
+        } catch (IllegalStateException ex) {
+            mostrarErroPonto(ex.getMessage());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            mostrarErroPonto("Erro ao fechar ponto: " + ex.getMessage());
+        }
+    }
+
+    /** Atualiza aparência do botão de acordo com o estado atual do ponto. */
+    private void atualizarBotaoPonto() {
+        if (pontoAbertoAtual != null) {
+            btnBaterPonto.setText("⏹  Fechar Ponto");
+            btnBaterPonto.setStyle(
+                "-fx-background-color: linear-gradient(to right, #FFD60A, #FF8E53);" +
+                "-fx-background-radius: 12;" +
+                "-fx-text-fill: #0F081E;" +
+                "-fx-cursor: hand;" +
+                "-fx-padding: 0 24 0 24;" +
+                "-fx-effect: dropshadow(gaussian, rgba(255,214,10,0.5), 14, 0, 0, 3);"
+            );
+        } else {
+            btnBaterPonto.setText("⏱  Bater Ponto");
+            btnBaterPonto.setStyle(
+                "-fx-background-color: linear-gradient(to right," + PINK + "," + ORANGE + ");" +
+                "-fx-background-radius: 12;" +
+                "-fx-text-fill: white;" +
+                "-fx-cursor: hand;" +
+                "-fx-padding: 0 24 0 24;" +
+                "-fx-effect: dropshadow(gaussian, rgba(255,107,138,0.5), 14, 0, 0, 3);"
+            );
+        }
+    }
+
     // ──────────────────────────────────────────────────────────────────
     //  OVERLAY DE CONFIRMAÇÃO (in-page, sem nova janela)
     // ──────────────────────────────────────────────────────────────────
-    private void mostrarConfirmacaoPonto() {
+    /**
+     * @param fechando true = acabou de fechar ponto, false = acabou de abrir
+     */
+    private void mostrarConfirmacaoPonto(boolean fechando) {
         StackPane overlay = new StackPane();
         overlay.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
         overlay.setStyle("-fx-background-color: rgba(0,0,0,0.65);");
 
+        String cor1 = fechando ? GREEN : PINK;
+        String cor2 = fechando ? "#2A9D47" : ORANGE;
+
         StackPane cardOuter = new StackPane();
-        cardOuter.setMaxWidth(380);
+        cardOuter.setMaxWidth(400);
         cardOuter.setMaxHeight(Region.USE_PREF_SIZE);
         cardOuter.setStyle(
-            "-fx-background-color: linear-gradient(to bottom right, " + PINK + ", " + ORANGE + ");" +
-            "-fx-background-radius: 22;" +
-            "-fx-padding: 1.5;"
+            "-fx-background-color: linear-gradient(to bottom right, " + cor1 + ", " + cor2 + ");" +
+            "-fx-background-radius: 22; -fx-padding: 1.5;"
         );
-        DropShadow glow = new DropShadow(40, Color.web(GREEN, 0.6));
+        DropShadow glow = new DropShadow(40, Color.web(cor1, 0.6));
         glow.setSpread(0.05);
         cardOuter.setEffect(glow);
 
@@ -385,13 +463,13 @@ public class TelaHomeFuncionario {
         card.setAlignment(Pos.CENTER);
         card.setStyle("-fx-background-color: #0F081E; -fx-background-radius: 21;");
 
-        Label icone = new Label("✓");
+        Label icone = new Label(fechando ? "⏹" : "⏱");
         icone.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 48));
-        icone.setTextFill(Color.web(GREEN));
-        DropShadow iconGlow = new DropShadow(24, Color.web(GREEN, 0.8));
+        icone.setTextFill(Color.web(cor1));
+        DropShadow iconGlow = new DropShadow(24, Color.web(cor1, 0.8));
         icone.setEffect(iconGlow);
 
-        Label titulo = new Label("Ponto Registrado!");
+        Label titulo = new Label(fechando ? "Ponto Fechado!" : "Ponto em Aberto!");
         titulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 20));
         titulo.setTextFill(Color.WHITE);
 
@@ -404,32 +482,43 @@ public class TelaHomeFuncionario {
         detalhe.setFont(Font.font("Helvetica Neue", 14));
         detalhe.setTextFill(Color.web(TEXT_SEC));
 
+        // Aviso apenas ao abrir ponto
+        Label aviso = null;
+        if (!fechando) {
+            aviso = new Label("Lembre-se de fechar o ponto ao sair!");
+            aviso.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 12));
+            aviso.setTextFill(Color.web("#FFD60A"));
+            aviso.setWrapText(true);
+        }
+
         Button btnOk = new Button("OK");
         btnOk.setPrefHeight(42);
         btnOk.setPrefWidth(120);
         btnOk.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 14));
         btnOk.setStyle(
-            "-fx-background-color: linear-gradient(to right," + PINK + "," + ORANGE + ");" +
+            "-fx-background-color: linear-gradient(to right," + cor1 + "," + cor2 + ");" +
             "-fx-background-radius: 10; -fx-text-fill: white; -fx-cursor: hand;"
         );
         VBox.setMargin(btnOk, new Insets(10, 0, 0, 0));
 
-        Runnable fechar = () -> {
+        Runnable fecharOverlay = () -> {
             FadeTransition ftOut = fade(overlay, 1, 0, 180);
             ftOut.setOnFinished(ev -> rootPane.getChildren().remove(overlay));
             ftOut.play();
         };
 
-        btnOk.setOnAction(e -> fechar.run());
+        btnOk.setOnAction(e -> fecharOverlay.run());
         btnOk.setOnMouseEntered(e -> escala(btnOk, 1.0, 1.05, 120).play());
         btnOk.setOnMouseExited(e  -> escala(btnOk, 1.05, 1.0, 120).play());
-        overlay.setOnMouseClicked(e -> { if (e.getTarget() == overlay) fechar.run(); });
+        overlay.setOnMouseClicked(e -> { if (e.getTarget() == overlay) fecharOverlay.run(); });
 
-        // Auto-fechar após 3 segundos
-        Timeline autoFechar = new Timeline(new KeyFrame(Duration.seconds(3), e -> fechar.run()));
+        // Auto-fechar após 4 segundos
+        Timeline autoFechar = new Timeline(new KeyFrame(Duration.seconds(4), e -> fecharOverlay.run()));
         autoFechar.play();
 
-        card.getChildren().addAll(icone, titulo, detalhe, btnOk);
+        card.getChildren().addAll(icone, titulo, detalhe);
+        if (aviso != null) card.getChildren().add(aviso);
+        card.getChildren().add(btnOk);
         cardOuter.getChildren().add(card);
         overlay.getChildren().add(cardOuter);
         StackPane.setAlignment(cardOuter, Pos.CENTER);
@@ -524,21 +613,30 @@ public class TelaHomeFuncionario {
             PontoDAO dao = new PontoDAO(Conexao.conexao);
 
             int hoje = dao.contarPontosHoje(funcionario.getIdFuncionario());
-            int mes  = dao.contarPontosMes(funcionario.getIdFuncionario());
+            String mes  = dao.somarHorasMes(funcionario.getIdFuncionario());
             List<PontoRow> pontos = dao.listarPorFuncionario(funcionario.getIdFuncionario());
 
+            // Detecta se existe ponto aberto hoje
+            pontoAbertoAtual = dao.buscarPontoAberto(funcionario.getIdFuncionario());
+
             lblStatHoje.setText(String.valueOf(hoje));
-            lblStatMes.setText(String.valueOf(mes));
+            lblStatMes.setText(mes);
 
             if (!pontos.isEmpty()) {
                 PontoRow ultimo = pontos.get(0);
-                lblUltimoPonto.setText(ultimo.getHorario());
+                String label = ultimo.isAberto()
+                    ? ultimo.getHorario() + " (aberto)"
+                    : ultimo.getHorario();
+                lblUltimoPonto.setText(label);
             } else {
                 lblUltimoPonto.setText("–");
             }
 
             ObservableList<PontoRow> ol = FXCollections.observableArrayList(pontos);
             tvPontos.setItems(ol);
+
+            // Atualiza aparência do botão
+            if (btnBaterPonto != null) atualizarBotaoPonto();
 
         } catch (Exception ex) {
             ex.printStackTrace();
