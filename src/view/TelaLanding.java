@@ -165,7 +165,7 @@ public class TelaLanding {
         cardsRow.getChildren().addAll(cardEmpresa, cardFuncionario, cardCadastro);
 
         // ── RODAPÉ ────────────────────────────────────────────────────
-        Label lblFooter = new Label("MistyPoint · Grupo G08 · DA123");
+        Label lblFooter = new Label("MistyPoint · Grupo G08");
         lblFooter.setFont(Font.font("Helvetica Neue", 11));
         lblFooter.setTextFill(Color.web(TEXT_SEC, 0.5));
         lblFooter.setAlignment(Pos.CENTER);

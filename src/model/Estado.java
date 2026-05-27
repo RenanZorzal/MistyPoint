@@ -11,9 +11,15 @@ public class Estado {
         this.nomeEstado = nomeEstado;
     }
 
-    public int    getIdEstado()   { return idEstado; }
-    public String getSigla()      { return sigla; }
-    public String getNomeEstado() { return nomeEstado; }
+    public int getIdEstado(){ 
+    	return idEstado;
+    }
+    public String getSigla(){ 
+    	return sigla; 
+    }
+    public String getNomeEstado(){ 
+    	return nomeEstado; 
+    }
 
     @Override
     public String toString() {

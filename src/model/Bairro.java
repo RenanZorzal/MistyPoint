@@ -11,9 +11,15 @@ public class Bairro {
         this.idCidade   = idCidade;
     }
 
-    public int    getIdBairro()   { return idBairro; }
-    public String getNomeBairro() { return nomeBairro; }
-    public int    getIdCidade()   { return idCidade; }
+    public int getIdBairro(){
+    	return idBairro;
+    }
+    public String getNomeBairro(){
+    	return nomeBairro;
+    }
+    public int getIdCidade(){
+    	return idCidade;
+    }
 
     @Override
     public String toString() {

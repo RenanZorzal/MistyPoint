@@ -11,12 +11,18 @@ public class Logradouro {
         this.idBairro       = idBairro;
     }
 
-    public int    getIdLogradouro()   { return idLogradouro; }
-    public String getNomeLogradouro() { return nomeLogradouro; }
-    public int    getIdBairro()       { return idBairro; }
+    public int    getIdLogradouro(){ 
+    	return idLogradouro;
+    }
+    public String getNomeLogradouro(){ 
+    	return nomeLogradouro;
+    }
+    public int getIdBairro(){ 
+    	return idBairro;
+    }
 
     @Override
-    public String toString() {
+    public String toString(){
         return nomeLogradouro;
     }
 }

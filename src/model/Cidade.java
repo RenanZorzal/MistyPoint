@@ -11,9 +11,15 @@ public class Cidade {
         this.idEstado   = idEstado;
     }
 
-    public int    getIdCidade()   { return idCidade; }
-    public String getNomeCidade() { return nomeCidade; }
-    public int    getIdEstado()   { return idEstado; }
+    public int getIdCidade()   {
+    	return idCidade;
+    }
+    public String getNomeCidade() {
+    	return nomeCidade;
+    }
+    public int getIdEstado()   {
+    	return idEstado;
+    }
 
     @Override
     public String toString() {

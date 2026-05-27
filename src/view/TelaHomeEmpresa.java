@@ -14,6 +14,8 @@ import javafx.animation.Timeline;
 import javafx.animation.TranslateTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -67,6 +69,14 @@ public class TelaHomeEmpresa {
     // Tabelas JavaFX
     private TableView<FuncionarioRow> tvFuncionarios;
     private TableView<PontoRow>       tvPontos;
+
+    // Lista base e filtrada de funcionários
+    private ObservableList<FuncionarioRow> listaFuncionarios = FXCollections.observableArrayList();
+    private FilteredList<FuncionarioRow>   listaFiltrada;
+
+    // Lista base e filtrada de pontos
+    private ObservableList<PontoRow> listaPontos = FXCollections.observableArrayList();
+    private FilteredList<PontoRow>   listaFiltradaPontos;
 
     // Labels dos cartões de estatística
     private Label lblStatFunc;
@@ -322,35 +332,75 @@ public class TelaHomeEmpresa {
         VBox painel = new VBox(14);
         VBox.setVgrow(painel, Priority.ALWAYS);
 
+        // ── Cabeçalho ────────────────────────────────────────────────
         Label titulo = new Label("Funcionários cadastrados");
         titulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 16));
         titulo.setTextFill(Color.WHITE);
 
+        // ── Barra de filtros ─────────────────────────────────────────
+        TextField tfFiltroNome  = criarCampoFiltro("🔍  Buscar por nome...");
+        TextField tfFiltroCpf   = criarCampoFiltro("🔍  Buscar por CPF...");
+        TextField tfFiltroCargo = criarCampoFiltro("🔍  Buscar por cargo...");
+
+        HBox filtrosBox = new HBox(12, tfFiltroNome, tfFiltroCpf, tfFiltroCargo);
+        filtrosBox.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(tfFiltroNome,  Priority.ALWAYS);
+        HBox.setHgrow(tfFiltroCpf,   Priority.ALWAYS);
+        HBox.setHgrow(tfFiltroCargo, Priority.ALWAYS);
+
+        // ── Inicializa FilteredList ───────────────────────────────────
+        listaFiltrada = new FilteredList<>(listaFuncionarios, p -> true);
+
+        Runnable aplicarFiltro = () -> {
+            String nome  = tfFiltroNome.getText().trim().toLowerCase();
+            String cpf   = tfFiltroCpf.getText().trim().toLowerCase();
+            String cargo = tfFiltroCargo.getText().trim().toLowerCase();
+            listaFiltrada.setPredicate(row -> {
+                boolean okNome  = nome.isEmpty()  || row.getNome().toLowerCase().contains(nome);
+                boolean okCpf   = cpf.isEmpty()   || row.getCpf().toLowerCase().contains(cpf);
+                boolean okCargo = cargo.isEmpty()  || row.getCargo().toLowerCase().contains(cargo);
+                return okNome && okCpf && okCargo;
+            });
+        };
+
+        tfFiltroNome.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+        tfFiltroCpf.textProperty().addListener((o, ov, nv)  -> aplicarFiltro.run());
+        tfFiltroCargo.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+
+        // ── Tabela ───────────────────────────────────────────────────
         tvFuncionarios = new TableView<>();
         tvFuncionarios.setStyle(estiloTabela());
         tvFuncionarios.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(tvFuncionarios, Priority.ALWAYS);
-        tvFuncionarios.setPlaceholder(criarPlaceholder("Nenhum funcionário cadastrado ainda."));
+        tvFuncionarios.setPlaceholder(criarPlaceholder("Nenhum funcionário encontrado."));
+
+        SortedList<FuncionarioRow> listaOrdenada = new SortedList<>(listaFiltrada);
+        tvFuncionarios.setItems(listaOrdenada);
 
         TableColumn<FuncionarioRow, String> colNome  = new TableColumn<>("Nome");
         colNome.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getNome()));
         colNome.setPrefWidth(180);
+        colNome.setSortable(false);
 
         TableColumn<FuncionarioRow, String> colCpf   = new TableColumn<>("CPF");
         colCpf.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getCpf()));
         colCpf.setPrefWidth(120);
+        colCpf.setSortable(false);
 
         TableColumn<FuncionarioRow, String> colCargo = new TableColumn<>("Cargo");
         colCargo.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getCargo()));
         colCargo.setPrefWidth(130);
+        colCargo.setSortable(false);
 
         TableColumn<FuncionarioRow, String> colTel   = new TableColumn<>("Telefone");
         colTel.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getTelefone()));
         colTel.setPrefWidth(120);
+        colTel.setSortable(false);
 
         TableColumn<FuncionarioRow, String> colEmail = new TableColumn<>("E-mail");
         colEmail.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getEmail()));
         colEmail.setPrefWidth(170);
+        colEmail.setSortable(false);
 
         // ── Coluna de Ações ──────────────────────────────────────────
         TableColumn<FuncionarioRow, Void> colAcoes = new TableColumn<>("Ações");
@@ -406,7 +456,7 @@ public class TelaHomeEmpresa {
 
         tvFuncionarios.getColumns().addAll(colNome, colCpf, colCargo, colTel, colEmail, colAcoes);
 
-        painel.getChildren().addAll(titulo, tvFuncionarios);
+        painel.getChildren().addAll(titulo, filtrosBox, tvFuncionarios);
         return painel;
     }
 
@@ -418,31 +468,69 @@ public class TelaHomeEmpresa {
         VBox painel = new VBox(14);
         VBox.setVgrow(painel, Priority.ALWAYS);
 
+        // ── Cabeçalho ────────────────────────────────────────────────
         Label titulo = new Label("Registro de Pontos");
         titulo.setFont(Font.font("Helvetica Neue", FontWeight.BOLD, 16));
         titulo.setTextFill(Color.WHITE);
 
+        // ── Barra de filtros ─────────────────────────────────────────
+        TextField tfFiltroFunc = criarCampoFiltro("🔍  Buscar por funcionário...");
+        TextField tfFiltroData = criarCampoFiltro("🔍  Buscar por data...");
+        TextField tfFiltroHora = criarCampoFiltro("🔍  Buscar por horário...");
+
+        HBox filtrosBox = new HBox(12, tfFiltroFunc, tfFiltroData, tfFiltroHora);
+        filtrosBox.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(tfFiltroFunc, Priority.ALWAYS);
+        HBox.setHgrow(tfFiltroData, Priority.ALWAYS);
+        HBox.setHgrow(tfFiltroHora, Priority.ALWAYS);
+
+        // ── Inicializa FilteredList ───────────────────────────────────
+        listaFiltradaPontos = new FilteredList<>(listaPontos, p -> true);
+
+        Runnable aplicarFiltro = () -> {
+            String func = tfFiltroFunc.getText().trim().toLowerCase();
+            String data = tfFiltroData.getText().trim().toLowerCase();
+            String hora = tfFiltroHora.getText().trim().toLowerCase();
+            listaFiltradaPontos.setPredicate(row -> {
+                boolean okFunc = func.isEmpty() || row.getNomeFuncionario().toLowerCase().contains(func);
+                boolean okData = data.isEmpty() || row.getDataPonto().toLowerCase().contains(data);
+                boolean okHora = hora.isEmpty() || row.getHorario().toLowerCase().contains(hora);
+                return okFunc && okData && okHora;
+            });
+        };
+
+        tfFiltroFunc.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+        tfFiltroData.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+        tfFiltroHora.textProperty().addListener((o, ov, nv) -> aplicarFiltro.run());
+
+        // ── Tabela ───────────────────────────────────────────────────
         tvPontos = new TableView<>();
         tvPontos.setStyle(estiloTabela());
         tvPontos.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         VBox.setVgrow(tvPontos, Priority.ALWAYS);
-        tvPontos.setPlaceholder(criarPlaceholder("Nenhum ponto registrado ainda."));
+        tvPontos.setPlaceholder(criarPlaceholder("Nenhum ponto encontrado."));
+
+        SortedList<PontoRow> listaOrdenadaPontos = new SortedList<>(listaFiltradaPontos);
+        tvPontos.setItems(listaOrdenadaPontos);
 
         TableColumn<PontoRow, String> colFunc = new TableColumn<>("Funcionário");
         colFunc.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getNomeFuncionario()));
         colFunc.setPrefWidth(250);
+        colFunc.setSortable(false);
 
         TableColumn<PontoRow, String> colData = new TableColumn<>("Data");
         colData.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getDataPonto()));
         colData.setPrefWidth(140);
+        colData.setSortable(false);
 
         TableColumn<PontoRow, String> colHora = new TableColumn<>("Horário");
         colHora.setCellValueFactory(d -> new javafx.beans.property.SimpleStringProperty(d.getValue().getHorario()));
         colHora.setPrefWidth(120);
+        colHora.setSortable(false);
 
         tvPontos.getColumns().addAll(colFunc, colData, colHora);
 
-        painel.getChildren().addAll(titulo, tvPontos);
+        painel.getChildren().addAll(titulo, filtrosBox, tvPontos);
         return painel;
     }
 
@@ -465,13 +553,13 @@ public class TelaHomeEmpresa {
 
             // Funcionários
             List<FuncionarioRow> funcionarios = homeDAO.listarFuncionarios(idEmpresa);
-            ObservableList<FuncionarioRow> olFunc = FXCollections.observableArrayList(funcionarios);
-            tvFuncionarios.setItems(olFunc);
+            listaFuncionarios.setAll(funcionarios);
+            if (listaFiltrada != null) listaFiltrada.setPredicate(listaFiltrada.getPredicate());
 
             // Pontos
             List<PontoRow> pontos = homeDAO.listarPontos(idEmpresa);
-            ObservableList<PontoRow> olPontos = FXCollections.observableArrayList(pontos);
-            tvPontos.setItems(olPontos);
+            listaPontos.setAll(pontos);
+            if (listaFiltradaPontos != null) listaFiltradaPontos.setPredicate(listaFiltradaPontos.getPredicate());
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -613,6 +701,48 @@ public class TelaHomeEmpresa {
 
     private String estiloTabela() {
         return "";
+    }
+
+    private TextField criarCampoFiltro(String placeholder) {
+        TextField tf = new TextField();
+        tf.setPromptText(placeholder);
+        tf.setFont(Font.font("Helvetica Neue", 13));
+        tf.setStyle(
+            "-fx-background-color: #130825;" +
+            "-fx-background-radius: 10;" +
+            "-fx-border-color: " + BORDER + ";" +
+            "-fx-border-radius: 10;" +
+            "-fx-border-width: 1;" +
+            "-fx-text-fill: white;" +
+            "-fx-prompt-text-fill: " + TEXT_SEC + ";" +
+            "-fx-padding: 8 14 8 14;"
+        );
+        tf.focusedProperty().addListener((o, ov, focused) -> {
+            if (focused) {
+                tf.setStyle(
+                    "-fx-background-color: #1A0D30;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-color: " + PURPLE + ";" +
+                    "-fx-border-radius: 10;" +
+                    "-fx-border-width: 1;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-prompt-text-fill: " + TEXT_SEC + ";" +
+                    "-fx-padding: 8 14 8 14;"
+                );
+            } else {
+                tf.setStyle(
+                    "-fx-background-color: #130825;" +
+                    "-fx-background-radius: 10;" +
+                    "-fx-border-color: " + BORDER + ";" +
+                    "-fx-border-radius: 10;" +
+                    "-fx-border-width: 1;" +
+                    "-fx-text-fill: white;" +
+                    "-fx-prompt-text-fill: " + TEXT_SEC + ";" +
+                    "-fx-padding: 8 14 8 14;"
+                );
+            }
+        });
+        return tf;
     }
 
     // ──────────────────────────────────────────────────────────────────
