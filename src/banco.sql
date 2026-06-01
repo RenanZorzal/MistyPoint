@@ -1,4 +1,4 @@
-﻿/*
+/*
 Grupo Sistema de Pontos:
 Gabrielly Abreu
 Renan Zorzal Berger
@@ -21,14 +21,6 @@ CREATE TABLE ESTADO (
 );
 go
 
--- Tabela de cidades (usado como dropdown, filtrado pelo estado selecionado)
-CREATE TABLE CIDADE (
-    IDCIDADE    int          IDENTITY(1,1) NOT NULL,
-    NOMECIDADE  varchar(45)  NOT NULL,
-    IDESTADO    int          NOT NULL
-);
-go
-
 -- Tabela de empresas (endereco embutido com colunas diretas)
 CREATE TABLE EMPRESA (
     IDEMPRESA          int          IDENTITY(1,1) NOT NULL,
@@ -44,7 +36,8 @@ CREATE TABLE EMPRESA (
     NUMERO             int          NOT NULL,
     COMPLEMENTO        varchar(45)  NULL,
     CEP                varchar(10)  NOT NULL,
-    IDCIDADE           int          NOT NULL
+    CIDADE             varchar(45)  NOT NULL,
+    IDESTADO           int          NOT NULL
 );
 go
 
@@ -62,7 +55,8 @@ CREATE TABLE FUNCIONARIO (
     NUMERO           int          NOT NULL,
     COMPLEMENTO      varchar(45)  NULL,
     CEP              varchar(10)  NOT NULL,
-    IDCIDADE         int          NOT NULL,
+    CIDADE           varchar(45)  NOT NULL,
+    IDESTADO         int          NOT NULL,
     -- Relacionamentos
     IDEMPRESA        int          NOT NULL
 );
@@ -86,8 +80,6 @@ go
 -- PKs
 ALTER TABLE estado      ADD CONSTRAINT estado_idestado_PK            PRIMARY KEY (idestado);
 go
-ALTER TABLE cidade      ADD CONSTRAINT cidade_idcidade_PK             PRIMARY KEY (idcidade);
-go
 ALTER TABLE empresa     ADD CONSTRAINT empresa_idempresa_PK           PRIMARY KEY (idempresa);
 go
 ALTER TABLE funcionario ADD CONSTRAINT funcionario_idfuncionario_PK   PRIMARY KEY (idfuncionario);
@@ -96,14 +88,11 @@ ALTER TABLE ponto       ADD CONSTRAINT ponto_idponto_PK               PRIMARY KE
 go
 
 -- FKs
-ALTER TABLE cidade ADD CONSTRAINT cidade_idestado_FK
+ALTER TABLE empresa ADD CONSTRAINT empresa_idestado_FK
     FOREIGN KEY (idestado) REFERENCES estado (idestado);
 go
-ALTER TABLE empresa ADD CONSTRAINT empresa_idcidade_FK
-    FOREIGN KEY (idcidade) REFERENCES cidade (idcidade);
-go
-ALTER TABLE funcionario ADD CONSTRAINT funcionario_idcidade_FK
-    FOREIGN KEY (idcidade) REFERENCES cidade (idcidade);
+ALTER TABLE funcionario ADD CONSTRAINT funcionario_idestado_FK
+    FOREIGN KEY (idestado) REFERENCES estado (idestado);
 go
 ALTER TABLE funcionario ADD CONSTRAINT funcionario_idempresa_FK
     FOREIGN KEY (idempresa) REFERENCES empresa (idempresa);
@@ -175,5 +164,3 @@ INSERT INTO ESTADO (SIGLA, NOMEESTADO) VALUES
 ('SE', 'Sergipe'),
 ('TO', 'Tocantins');
 go
-
-

@@ -49,8 +49,8 @@ public class EmpresaDAO {
         String sql = "INSERT INTO empresa " +
                      "(cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
                      "nomeempresa, emailempresa, senhaempresa, " +
-                     "logradouro, numero, complemento, cep, idcidade) " +
-                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+                     "logradouro, numero, complemento, cep, cidade, idestado) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1,  empresa.getCnpj());
         stmt.setString(2,  empresa.getRazaoSocial());
@@ -63,7 +63,8 @@ public class EmpresaDAO {
         stmt.setInt(9,     empresa.getNumero());
         stmt.setString(10, empresa.getComplemento() != null ? empresa.getComplemento() : "");
         stmt.setString(11, empresa.getCep());
-        stmt.setInt(12,    empresa.getIdCidade());
+        stmt.setString(12, empresa.getCidade());
+        stmt.setInt(13,    empresa.getIdEstado());
         stmt.executeUpdate();
 
         int idGerado = -1;
@@ -97,7 +98,7 @@ public class EmpresaDAO {
     public Empresa autenticarRetornarEmpresa(String email, String senha) throws SQLException {
         String sql = "SELECT idempresa, cnpj, razaosocial, nomefantasia, inscricaoestadual, " +
                      "nomeempresa, emailempresa, senhaempresa, " +
-                     "logradouro, numero, complemento, cep, idcidade " +
+                     "logradouro, numero, complemento, cep, cidade, idestado " +
                      "FROM empresa WHERE emailempresa = ? AND senhaempresa = ?";
         PreparedStatement stmt = conn.prepareStatement(sql);
         stmt.setString(1, email);
@@ -119,7 +120,8 @@ public class EmpresaDAO {
             emp.setNumero(rs.getInt("numero"));
             emp.setComplemento(rs.getString("complemento"));
             emp.setCep(rs.getString("cep"));
-            emp.setIdCidade(rs.getInt("idcidade"));
+            emp.setCidade(rs.getString("cidade"));
+            emp.setIdEstado(rs.getInt("idestado"));
         }
         rs.close();
         stmt.close();

@@ -4,6 +4,9 @@ import dao.FuncionarioDAO;
 import dao.HomeEmpresaDAO;
 import dao.HomeEmpresaDAO.FuncionarioRow;
 import dao.HomeEmpresaDAO.PontoRow;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import javafx.animation.FadeTransition;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -847,10 +850,13 @@ public class TelaHomeEmpresa {
 
         TextField tfData = criarCampoEdicao(row.getDataPonto());
         tfData.setPromptText("Data (dd/MM/yyyy)");
+        MaskUtils.applyDataMask(tfData);
         TextField tfEntrada = criarCampoEdicao(row.getHorario());
         tfEntrada.setPromptText("Entrada (HH:mm)");
+        MaskUtils.applyHorarioMask(tfEntrada);
         TextField tfSaida = criarCampoEdicao(row.getHorarioFechamento().equals("--:--") ? "" : row.getHorarioFechamento());
         tfSaida.setPromptText("Saída (HH:mm)");
+        MaskUtils.applyHorarioMask(tfSaida);
 
         javafx.scene.control.ComboBox<String> cbStatus = new javafx.scene.control.ComboBox<>();
         if ("FECHADO".equals(row.getStatus())) {
@@ -950,22 +956,85 @@ public class TelaHomeEmpresa {
         btnSalvar.setOnMouseEntered(e -> escala(btnSalvar, 1.0, 1.05, 120).play());
         btnSalvar.setOnMouseExited (e -> escala(btnSalvar, 1.05, 1.0, 120).play());
         btnSalvar.setOnAction(e -> {
-            String status = cbStatus.getValue();
-            String saida = tfSaida.getText().trim();
-            if ("FECHADO".equals(status) && (saida.isEmpty() || saida.equals("--:--"))) {
-                lblErro.setText("⚠ Para fechar o ponto, o horário de saída é obrigatório.");
+            String status  = cbStatus.getValue();
+            String dataStr   = tfData.getText().trim();
+            String entrada = tfEntrada.getText().trim();
+            String saida   = tfSaida.getText().trim();
+
+            // Helper para mostrar erro com shake
+            java.util.function.Consumer<String> mostrarErroModal = msg -> {
+                lblErro.setText(msg);
                 lblErro.setVisible(true);
                 lblErro.setManaged(true);
                 TranslateTransition shake = new TranslateTransition(Duration.millis(55), lblErro);
                 shake.setFromX(-7); shake.setToX(7);
                 shake.setCycleCount(5); shake.setAutoReverse(true);
                 shake.play();
+            };
+
+            // Valida data
+            if (dataStr.length() != 10) {
+                mostrarErroModal.accept("⚠ Data incompleta. Use o formato DD/MM/AAAA.");
                 return;
             }
+            LocalDate dataParsed;
+            try {
+                dataParsed = LocalDate.parse(dataStr, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            } catch (DateTimeParseException ex) {
+                mostrarErroModal.accept("⚠ Data inválida. Verifique dia, mês e ano.");
+                return;
+            }
+            if (dataParsed.getYear() < 2026) {
+                mostrarErroModal.accept("⚠ O ano deve ser 2026 ou posterior.");
+                return;
+            }
+
+            // Valida horário de entrada
+            if (!entrada.isEmpty()) {
+                if (entrada.length() != 5) {
+                    mostrarErroModal.accept("⚠ Horário de entrada incompleto. Use HH:MM.");
+                    return;
+                }
+                int hE = Integer.parseInt(entrada.substring(0, 2));
+                int mE = Integer.parseInt(entrada.substring(3, 5));
+                if (hE > 23 || mE > 59) {
+                    mostrarErroModal.accept("⚠ Horário de entrada inválido (00:00 a 23:59).");
+                    return;
+                }
+            }
+
+            // Valida horário de saída (se preenchido)
+            if (!saida.isEmpty() && !saida.equals("--:--")) {
+                if (saida.length() != 5) {
+                    mostrarErroModal.accept("⚠ Horário de saída incompleto. Use HH:MM.");
+                    return;
+                }
+                int hS = Integer.parseInt(saida.substring(0, 2));
+                int mS = Integer.parseInt(saida.substring(3, 5));
+                if (hS > 23 || mS > 59) {
+                    mostrarErroModal.accept("⚠ Horário de saída inválido (00:00 a 23:59).");
+                    return;
+                }
+            }
+
+            // Saída obrigatória quando status FECHADO
+            if ("FECHADO".equals(status) && (saida.isEmpty() || saida.equals("--:--"))) {
+                mostrarErroModal.accept("⚠ Para fechar o ponto, o horário de saída é obrigatório.");
+                return;
+            }
+
+            // Saída não pode ser anterior ou igual à entrada
+            if (!saida.isEmpty() && !saida.equals("--:--") && !entrada.isEmpty()) {
+                if (saida.compareTo(entrada) <= 0) {
+                    mostrarErroModal.accept("⚠ O horário de saída deve ser maior que o de entrada.");
+                    return;
+                }
+            }
+
             try {
                 Conexao.conectar();
                 HomeEmpresaDAO dao = new HomeEmpresaDAO(Conexao.conexao);
-                dao.atualizarPonto(row.getId(), tfData.getText().trim(), tfEntrada.getText().trim(), saida, status);
+                dao.atualizarPonto(row.getId(), dataStr, entrada, saida, status);
                 Conexao.desconectar();
                 fechar.run();
                 carregarDados();

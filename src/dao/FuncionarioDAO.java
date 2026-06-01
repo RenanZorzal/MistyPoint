@@ -46,8 +46,8 @@ public class FuncionarioDAO {
     public void inserir(Funcionario funcionario) throws SQLException {
         String sql = "INSERT INTO funcionario " +
                      "(nomefuncionario, cpffuncionario, cargo, telefone, emailfuncionario, " +
-                     "senhafuncionario, logradouro, numero, complemento, cep, idcidade, idempresa) " +
-                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)";
+                     "senhafuncionario, logradouro, numero, complemento, cep, cidade, idestado, idempresa) " +
+                     "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement stmt = conn.prepareStatement(sql);
         stmt.setString(1,  funcionario.getNome());
         stmt.setString(2,  funcionario.getCpf());
@@ -59,8 +59,9 @@ public class FuncionarioDAO {
         stmt.setInt(8,     funcionario.getNumero());
         stmt.setString(9,  funcionario.getComplemento() != null ? funcionario.getComplemento() : "");
         stmt.setString(10, funcionario.getCep());
-        stmt.setInt(11,    funcionario.getIdCidade());
-        stmt.setInt(12,    funcionario.getIdEmpresa());
+        stmt.setString(11, funcionario.getCidade());
+        stmt.setInt(12,    funcionario.getIdEstado());
+        stmt.setInt(13,    funcionario.getIdEmpresa());
         stmt.executeUpdate();
         stmt.close();
     }
@@ -121,7 +122,7 @@ public class FuncionarioDAO {
     public Funcionario autenticarRetornarFuncionario(String email, String senha) throws SQLException {
         String sql = "SELECT idfuncionario, nomefuncionario, cpffuncionario, cargo, telefone, " +
                      "emailfuncionario, senhafuncionario, " +
-                     "logradouro, numero, complemento, cep, idcidade, idempresa " +
+                     "logradouro, numero, complemento, cep, cidade, idestado, idempresa " +
                      "FROM funcionario WHERE emailfuncionario = ? AND senhafuncionario = ?";
         PreparedStatement stmt = conn.prepareStatement(sql);
         stmt.setString(1, email);
@@ -141,7 +142,8 @@ public class FuncionarioDAO {
             f.setNumero(rs.getInt("numero"));
             f.setComplemento(rs.getString("complemento"));
             f.setCep(rs.getString("cep"));
-            f.setIdCidade(rs.getInt("idcidade"));
+            f.setCidade(rs.getString("cidade"));
+            f.setIdEstado(rs.getInt("idestado"));
             f.setIdEmpresa(rs.getInt("idempresa"));
         }
         rs.close();

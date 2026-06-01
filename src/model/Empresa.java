@@ -16,7 +16,8 @@ public class Empresa {
     private int    numero;
     private String complemento;
     private String cep;
-    private int    idCidade;
+    private String cidade;
+    private int    idEstado;
 
     public Empresa(String cnpj, String razaoSocial, String nomeFantasia,
                    String inscricaoEstadual, String nomeEmpresa,
@@ -72,6 +73,9 @@ public class Empresa {
     public String getCep()                            { return cep; }
     public void   setCep(String cep)                  { this.cep = cep; }
 
-    public int    getIdCidade()                       { return idCidade; }
-    public void   setIdCidade(int idCidade)           { this.idCidade = idCidade; }
+    public String getCidade()                         { return cidade; }
+    public void   setCidade(String cidade)            { this.cidade = cidade; }
+
+    public int    getIdEstado()                       { return idEstado; }
+    public void   setIdEstado(int idEstado)           { this.idEstado = idEstado; }
 }

@@ -33,7 +33,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
-import model.Cidade;
 import model.Conexao;
 import model.Estado;
 import model.Funcionario;
@@ -63,7 +62,7 @@ public class TelaCadastroFuncionario {
 
     // ── Campos de endereço (flat) ─────────────────────────
     private ComboBox<Estado> cbEstado;
-    private ComboBox<Cidade> cbCidade;
+    private TextField        tfCidade;
     private TextField        tfLogradouro;
     private TextField        tfNumero;
     private TextField        tfComplemento;
@@ -164,33 +163,21 @@ public class TelaCadastroFuncionario {
 
         // ── CAMPOS DE ENDEREÇO (flat) ─────────────────────────────────
         cbEstado      = criarComboBox("Selecione o Estado");
-        cbCidade      = criarComboBox("Selecione a Cidade");
+        tfCidade      = criarCampo("Cidade", false);
         tfLogradouro  = criarCampo("Logradouro (Rua, Av, etc.)", false);
         tfNumero      = criarCampo("Número", false);
         tfComplemento = criarCampo("Complemento (opcional)", false);
         tfCep         = criarCampo("CEP (ex: 00000-000)", false);
         MaskUtils.applyCepMask(tfCep);
 
-        cbCidade.setDisable(true);
         carregarEstados();
-
-        cbEstado.setOnAction(e -> {
-            Estado est = cbEstado.getValue();
-            if (est != null) {
-                carregarCidades(est.getIdEstado());
-                cbCidade.setDisable(false);
-            } else {
-                cbCidade.getItems().clear();
-                cbCidade.setDisable(true);
-            }
-        });
 
         // ── LINHAS DO FORMULÁRIO ──────────────────────────────────────
         HBox linhaDados1 = linha(grupo("Nome", tfNome), grupo("CPF", tfCpf));
         HBox linhaDados2 = linha(grupo("Cargo", tfCargo), grupo("Telefone", tfTelefone));
         HBox linhaDados3 = linha(grupo("E-mail", tfEmail), grupo("Senha", pfSenha));
 
-        HBox linhaEnd1 = linha(grupo("Estado", cbEstado), grupo("Cidade", cbCidade));
+        HBox linhaEnd1 = linha(grupo("Estado", cbEstado), grupo("Cidade", tfCidade));
         HBox linhaEnd2 = linha(grupo("Logradouro", tfLogradouro), grupo("CEP", tfCep));
         HBox linhaEnd3 = linha(grupo("Número", tfNumero), grupo("Complemento (opcional)", tfComplemento));
 
@@ -472,24 +459,26 @@ public class TelaCadastroFuncionario {
     // ── Validação ─────────────────────────────────────────────────────
 
     private boolean validarCampos() {
-        String nome     = tfNome.getText().trim();
-        String cpf      = tfCpf.getText().trim();
-        String cargo    = tfCargo.getText().trim();
-        String telefone = tfTelefone.getText().trim();
-        String email    = tfEmail.getText().trim();
-        String senha    = pfSenha.getText().trim();
+        String nome        = tfNome.getText().trim();
+        String cpfFormatado = tfCpf.getText().trim();
+        String cpf         = cpfFormatado.replaceAll("[^\\d]", ""); // extrai só dígitos
+        String cargo       = tfCargo.getText().trim();
+        String telefone    = tfTelefone.getText().trim();
+        String email       = tfEmail.getText().trim();
+        String senha       = pfSenha.getText().trim();
 
         if (nome.isEmpty() || nome.length() < 3) {
             mostrarErro(nome.isEmpty() ? "Informe o nome do funcionário." : "Nome deve ter pelo menos 3 caracteres.");
             return false;
         }
-        if (cpf.isEmpty() || cpf.length() != 11 || !cpf.matches("\\d+")) {
+        if (cpf.isEmpty() || cpf.length() != 11) {
             mostrarErro(cpf.isEmpty() ? "Informe o CPF." : "CPF deve ter exatamente 11 dígitos.");
             return false;
         }
         if (cargo.isEmpty())    { mostrarErro("Informe o cargo.");    return false; }
-        if (telefone.isEmpty() || telefone.length() < 10) {
-            mostrarErro(telefone.isEmpty() ? "Informe o telefone." : "Telefone deve ter pelo menos 10 dígitos.");
+        String telefoneDigitos = telefone.replaceAll("[^\\d]", "");
+        if (telefoneDigitos.isEmpty() || telefoneDigitos.length() < 10) {
+            mostrarErro(telefoneDigitos.isEmpty() ? "Informe o telefone." : "Telefone deve ter pelo menos 10 dígitos.");
             return false;
         }
         if (email.isEmpty() || !email.contains("@") || !email.contains(".")) {
@@ -500,8 +489,8 @@ public class TelaCadastroFuncionario {
             return false;
         }
 
-        if (cbEstado.getValue()  == null) { mostrarErro("Selecione um estado.");  return false; }
-        if (cbCidade.getValue()  == null) { mostrarErro("Selecione uma cidade."); return false; }
+        if (cbEstado.getValue()  == null) { mostrarErro("Selecione um estado.");       return false; }
+        if (tfCidade.getText().trim().isEmpty()) { mostrarErro("Informe a cidade."); return false; }
         if (tfLogradouro.getText().trim().isEmpty()) { mostrarErro("Informe o logradouro."); return false; }
         if (tfCep.getText().trim().isEmpty())        { mostrarErro("Informe o CEP.");        return false; }
 
@@ -520,9 +509,9 @@ public class TelaCadastroFuncionario {
 
         Funcionario f = new Funcionario(
             tfNome.getText().trim(),
-            tfCpf.getText().trim(),
+            tfCpf.getText().trim().replaceAll("[^\\d]", ""),   // salva CPF só com dígitos
             tfCargo.getText().trim(),
-            tfTelefone.getText().trim(),
+            tfTelefone.getText().trim().replaceAll("[^\\d]", ""), // salva telefone só com dígitos
             tfEmail.getText().trim(),
             pfSenha.getText().trim()
         );
@@ -531,7 +520,8 @@ public class TelaCadastroFuncionario {
         f.setNumero(Integer.parseInt(tfNumero.getText().trim()));
         f.setComplemento(tfComplemento.getText().trim());
         f.setCep(tfCep.getText().trim());
-        f.setIdCidade(cbCidade.getValue().getIdCidade());
+        f.setCidade(tfCidade.getText().trim());
+        f.setIdEstado(cbEstado.getValue().getIdEstado());
 
         try {
             new FuncionarioController(f).salvar();
@@ -576,9 +566,8 @@ public class TelaCadastroFuncionario {
         tfNome.clear(); tfCpf.clear(); tfCargo.clear();
         tfTelefone.clear(); tfEmail.clear(); pfSenha.clear();
         tfLogradouro.clear(); tfNumero.clear();
-        tfComplemento.clear(); tfCep.clear();
+        tfComplemento.clear(); tfCep.clear(); tfCidade.clear();
         cbEstado.getSelectionModel().clearSelection();
-        cbCidade.getItems().clear(); cbCidade.setDisable(true);
     }
 
     // ── Loaders DB ─────────────────────────────────────────────────────
@@ -588,18 +577,6 @@ public class TelaCadastroFuncionario {
             Conexao.conectar();
             EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
             cbEstado.setItems(FXCollections.observableArrayList(dao.listarEstados()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            Conexao.desconectar();
-        }
-    }
-
-    private void carregarCidades(int idEstado) {
-        try {
-            Conexao.conectar();
-            EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
-            cbCidade.setItems(FXCollections.observableArrayList(dao.listarCidadesPorEstado(idEstado)));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

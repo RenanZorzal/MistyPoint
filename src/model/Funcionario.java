@@ -15,7 +15,8 @@ public class Funcionario {
     private int    numero;
     private String complemento;
     private String cep;
-    private int    idCidade;
+    private String cidade;
+    private int    idEstado;
 
     public Funcionario(String nome, String cpf, String cargo, String telefone, String email, String senha) {
         setNome(nome);
@@ -68,6 +69,9 @@ public class Funcionario {
     public String getCep()                        { return cep; }
     public void   setCep(String cep)              { this.cep = cep; }
 
-    public int    getIdCidade()                   { return idCidade; }
-    public void   setIdCidade(int idCidade)       { this.idCidade = idCidade; }
+    public String getCidade()                     { return cidade; }
+    public void   setCidade(String cidade)        { this.cidade = cidade; }
+
+    public int    getIdEstado()                   { return idEstado; }
+    public void   setIdEstado(int idEstado)       { this.idEstado = idEstado; }
 }

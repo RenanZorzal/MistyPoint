@@ -33,7 +33,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.util.Duration;
-import model.Cidade;
 import model.Conexao;
 import model.Empresa;
 import model.Estado;
@@ -60,7 +59,7 @@ public class TelaCadastroEmpresa {
 
     // ── Endereço (flat) ───────────────────────────────────
     private ComboBox<Estado>  cbEstado;
-    private ComboBox<Cidade>  cbCidade;
+    private TextField         tfCidade;
     private TextField         tfLogradouro;
     private TextField         tfNumero;
     private TextField         tfComplemento;
@@ -151,26 +150,14 @@ public class TelaCadastroEmpresa {
 
         // ── CAMPOS DE ENDEREÇO (flat: Estado → Cidade → campos livres) ─
         cbEstado      = criarComboBox("Selecione o Estado");
-        cbCidade      = criarComboBox("Selecione a Cidade");
+        tfCidade      = criarCampo("Cidade", false);
         tfLogradouro  = criarCampo("Logradouro (Rua, Av, etc.)", false);
         tfNumero      = criarCampo("Número", false);
         tfComplemento = criarCampo("Complemento (opcional)", false);
         tfCep         = criarCampo("CEP (ex: 00000-000)", false);
         MaskUtils.applyCepMask(tfCep);
 
-        cbCidade.setDisable(true);
         carregarEstados();
-
-        cbEstado.setOnAction(e -> {
-            Estado est = cbEstado.getValue();
-            if (est != null) {
-                carregarCidades(est.getIdEstado());
-                cbCidade.setDisable(false);
-            } else {
-                cbCidade.getItems().clear();
-                cbCidade.setDisable(true);
-            }
-        });
 
         // ── LINHAS DO FORMULÁRIO ──────────────────────────────────────
         HBox linhaDados1 = linha(grupo("Nome da Empresa", tfNomeEmpresa), grupo("CNPJ", tfCnpj));
@@ -180,8 +167,8 @@ public class TelaCadastroEmpresa {
             grupo("E-mail", tfEmail),
             grupo("Senha", pfSenha));
 
-        // Endereço: Estado + Cidade (dropdowns) / Logradouro + CEP / Número + Complemento
-        HBox linhaEnd1 = linha(grupo("Estado", cbEstado), grupo("Cidade", cbCidade));
+        // Endereço: Estado (dropdown) + Cidade (digitável) / Logradouro + CEP / Número + Complemento
+        HBox linhaEnd1 = linha(grupo("Estado", cbEstado), grupo("Cidade", tfCidade));
         HBox linhaEnd2 = linha(grupo("Logradouro", tfLogradouro), grupo("CEP", tfCep));
         HBox linhaEnd3 = linha(grupo("Número", tfNumero), grupo("Complemento (opcional)", tfComplemento));
 
@@ -469,8 +456,8 @@ public class TelaCadastroEmpresa {
             mostrarErro(senha.isEmpty() ? "Informe a senha." : "Senha deve ter pelo menos 6 caracteres."); return false;
         }
 
-        if (cbEstado.getValue() == null) { mostrarErro("Selecione um estado.");  return false; }
-        if (cbCidade.getValue()  == null) { mostrarErro("Selecione uma cidade."); return false; }
+        if (cbEstado.getValue() == null) { mostrarErro("Selecione um estado.");       return false; }
+        if (tfCidade.getText().trim().isEmpty()) { mostrarErro("Informe a cidade."); return false; }
         if (tfLogradouro.getText().trim().isEmpty()) { mostrarErro("Informe o logradouro."); return false; }
         if (tfCep.getText().trim().isEmpty())        { mostrarErro("Informe o CEP.");        return false; }
 
@@ -500,7 +487,8 @@ public class TelaCadastroEmpresa {
         emp.setNumero(Integer.parseInt(tfNumero.getText().trim()));
         emp.setComplemento(tfComplemento.getText().trim());
         emp.setCep(tfCep.getText().trim());
-        emp.setIdCidade(cbCidade.getValue().getIdCidade());
+        emp.setCidade(tfCidade.getText().trim());
+        emp.setIdEstado(cbEstado.getValue().getIdEstado());
 
         try {
             new EmpresaController(emp).salvar();
@@ -533,9 +521,8 @@ public class TelaCadastroEmpresa {
         tfNomeFantasia.clear(); tfInscricaoEstadual.clear();
         tfEmail.clear(); pfSenha.clear();
         tfLogradouro.clear(); tfNumero.clear();
-        tfComplemento.clear(); tfCep.clear();
+        tfComplemento.clear(); tfCep.clear(); tfCidade.clear();
         cbEstado.getSelectionModel().clearSelection();
-        cbCidade.getItems().clear(); cbCidade.setDisable(true);
     }
 
     // ── Loaders DB ─────────────────────────────────────────────────────
@@ -545,18 +532,6 @@ public class TelaCadastroEmpresa {
             Conexao.conectar();
             EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
             cbEstado.setItems(FXCollections.observableArrayList(dao.listarEstados()));
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            Conexao.desconectar();
-        }
-    }
-
-    private void carregarCidades(int idEstado) {
-        try {
-            Conexao.conectar();
-            EnderecoDAO dao = new EnderecoDAO(Conexao.conexao);
-            cbCidade.setItems(FXCollections.observableArrayList(dao.listarCidadesPorEstado(idEstado)));
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
