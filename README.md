@@ -94,9 +94,8 @@ O banco é gerenciado pelo **Microsoft SQL Server** e conta com as seguintes tab
 1. **Clone ou baixe** o repositório.
 2. **Execute o script SQL** `banco.sql` no seu SQL Server para criar o banco `DA123_Exerc_G08` e popular os estados.
 3. **Configure a conexão** em `src/model/Conexao.java` com seu host, usuário e senha do SQL Server.
-4. **Importe o projeto** no Eclipse como *Existing Java Project*.
-5. **Adicione a biblioteca** `libs/mssql-jdbc-12.4.2.jre11.jar` ao Build Path do projeto.
-6. **Execute** a classe principal `src/view/Principal.java`.
+4. **Adicione a biblioteca** `libs/mssql-jdbc-12.4.2.jre11.jar` ao Build Path do projeto.
+5. **Execute** a classe principal `src/view/Principal.java`.
 
 ---
 
