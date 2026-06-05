@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/Java-JavaFX-orange?style=for-the-badge&logo=java" alt="Java + JavaFX"/>
   <img src="https://img.shields.io/badge/Banco%20de%20Dados-SQL%20Server-blue?style=for-the-badge&logo=microsoftsqlserver" alt="SQL Server"/>
   <img src="https://img.shields.io/badge/Arquitetura-MVC-purple?style=for-the-badge" alt="MVC"/>
-  <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow?style=for-the-badge" alt="Status"/>
+  <img src="https://img.shields.io/badge/Status-Conclu%C3%ADdo-brightgreen?style=for-the-badge" alt="Status"/>
 </p>
 
 ---
